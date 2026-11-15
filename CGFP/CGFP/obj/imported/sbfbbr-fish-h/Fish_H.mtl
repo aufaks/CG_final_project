@@ -1,0 +1,8 @@
+# exported by https://3dviewer.net
+newmtl MI_Fish_H
+Kd 0.8 0.8 0.8
+d 1
+Ka 0 0 0
+Ks 0.8 0.8 0.8
+Ns 250
+map_Kd T_Fish_H_D.png

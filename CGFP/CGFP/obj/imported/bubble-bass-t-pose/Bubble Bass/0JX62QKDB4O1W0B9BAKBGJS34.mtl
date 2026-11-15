@@ -1,0 +1,7 @@
+newmtl tex_0000_bubblebass_128
+Kd 1.0 1.0 1.0
+map_Kd body.png
+
+newmtl tex_0000_bubblebass_eyes
+Kd 1.0 1.0 1.0
+map_Kd eyes.png
