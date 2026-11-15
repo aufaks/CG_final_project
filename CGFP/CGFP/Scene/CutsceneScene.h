@@ -1,18 +1,14 @@
 #pragma once
-#include "Character/Camera.h"
-#include "Event/Cutscene.h"
+#include "Core/GL.h"
 #include "Scene/Scene.h"
 
-// 오프닝 컷신: Enter로 대사 넘기기, Space로 전체 건너뛰기. 끝나면 PlayScene.
 class CutsceneScene : public Scene {
 public:
-    void Enter() override;
-    void Update(float deltaTime) override;
-    void Render() override;
-
-private:
-    void ShowCurrentLine();
-
-    Cutscene cutscene;
-    Camera camera;
+    void Enter() override {}
+    void Exit() override {}
+    void Update(float deltaTime) override {}
+    void Render() override {
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
 };

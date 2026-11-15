@@ -1,17 +1,14 @@
 #pragma once
+#include "Core/GL.h"
 #include "Scene/Scene.h"
 
-// 엔딩: 마지막 날까지 할당량을 채우면 성공, 못 채우면 게임 오버. Enter → 타이틀.
-// TODO(4단계): 엔딩 화면/컷신
 class EndingScene : public Scene {
 public:
-    EndingScene(bool success, int day) : success(success), day(day) {}
-
-    void Enter() override;
-    void Update(float deltaTime) override;
-    void Render() override;
-
-private:
-    bool success;
-    int day;
+    void Enter() override {}
+    void Exit() override {}
+    void Update(float deltaTime) override {}
+    void Render() override {
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
 };

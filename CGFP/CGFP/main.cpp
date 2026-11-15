@@ -19,6 +19,9 @@ constexpr double kMaxDeltaTime = 0.05; // 창을 끌다 놓았을 때 한 번에
 } // namespace
 
 int main() {
+    // 소스가 UTF-8(/utf-8)이므로 콘솔도 UTF-8로 출력해야 한글이 깨지지 않는다
+    SetConsoleOutputCP(CP_UTF8);
+
     // 텍스처 디코딩(WIC)에 필요
     const HRESULT com = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 

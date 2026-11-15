@@ -45,22 +45,7 @@
     <ClCompile Include="Core\InputManager.cpp">
       <Filter>코어</Filter>
     </ClCompile>
-    <ClCompile Include="Core\SoundManager.cpp">
-      <Filter>코어</Filter>
-    </ClCompile>
-    <ClCompile Include="Scene\CutsceneScene.cpp">
-      <Filter>씬</Filter>
-    </ClCompile>
-    <ClCompile Include="Scene\EndingScene.cpp">
-      <Filter>씬</Filter>
-    </ClCompile>
-    <ClCompile Include="Scene\PlayScene.cpp">
-      <Filter>씬</Filter>
-    </ClCompile>
     <ClCompile Include="Scene\SceneManager.cpp">
-      <Filter>씬</Filter>
-    </ClCompile>
-    <ClCompile Include="Scene\TitleScene.cpp">
       <Filter>씬</Filter>
     </ClCompile>
     <ClCompile Include="Render\Mesh.cpp">
@@ -75,62 +60,14 @@
     <ClCompile Include="Render\Texture.cpp">
       <Filter>렌더링</Filter>
     </ClCompile>
-    <ClCompile Include="Render\UI.cpp">
-      <Filter>렌더링</Filter>
-    </ClCompile>
     <ClCompile Include="Character\Camera.cpp">
-      <Filter>카메라·캐릭터</Filter>
-    </ClCompile>
-    <ClCompile Include="Character\Customer.cpp">
-      <Filter>카메라·캐릭터</Filter>
-    </ClCompile>
-    <ClCompile Include="Character\Player.cpp">
       <Filter>카메라·캐릭터</Filter>
     </ClCompile>
     <ClCompile Include="Object\Collider.cpp">
       <Filter>오브젝트</Filter>
     </ClCompile>
-    <ClCompile Include="Object\InteractableObject.cpp">
-      <Filter>오브젝트</Filter>
-    </ClCompile>
     <ClCompile Include="Object\Object.cpp">
       <Filter>오브젝트</Filter>
-    </ClCompile>
-    <ClCompile Include="Object\Ray.cpp">
-      <Filter>오브젝트</Filter>
-    </ClCompile>
-    <ClCompile Include="Cooking\Grill.cpp">
-      <Filter>요리</Filter>
-    </ClCompile>
-    <ClCompile Include="Cooking\Ingredient.cpp">
-      <Filter>요리</Filter>
-    </ClCompile>
-    <ClCompile Include="Cooking\IngredientBox.cpp">
-      <Filter>요리</Filter>
-    </ClCompile>
-    <ClCompile Include="Cooking\Plate.cpp">
-      <Filter>요리</Filter>
-    </ClCompile>
-    <ClCompile Include="Cooking\Seat.cpp">
-      <Filter>요리</Filter>
-    </ClCompile>
-    <ClCompile Include="Order\CustomerManager.cpp">
-      <Filter>주문·진행</Filter>
-    </ClCompile>
-    <ClCompile Include="Order\DayManager.cpp">
-      <Filter>주문·진행</Filter>
-    </ClCompile>
-    <ClCompile Include="Order\OrderManager.cpp">
-      <Filter>주문·진행</Filter>
-    </ClCompile>
-    <ClCompile Include="Order\Recipe.cpp">
-      <Filter>주문·진행</Filter>
-    </ClCompile>
-    <ClCompile Include="Event\Cutscene.cpp">
-      <Filter>연출</Filter>
-    </ClCompile>
-    <ClCompile Include="Event\SpecialEvent.cpp">
-      <Filter>연출</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

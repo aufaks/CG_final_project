@@ -141,35 +141,14 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Core\InputManager.cpp" />
-    <ClCompile Include="Core\SoundManager.cpp" />
-    <ClCompile Include="Scene\CutsceneScene.cpp" />
-    <ClCompile Include="Scene\EndingScene.cpp" />
-    <ClCompile Include="Scene\PlayScene.cpp" />
     <ClCompile Include="Scene\SceneManager.cpp" />
-    <ClCompile Include="Scene\TitleScene.cpp" />
     <ClCompile Include="Render\Mesh.cpp" />
     <ClCompile Include="Render\ResourceManager.cpp" />
     <ClCompile Include="Render\ShaderManager.cpp" />
     <ClCompile Include="Render\Texture.cpp" />
-    <ClCompile Include="Render\UI.cpp" />
     <ClCompile Include="Character\Camera.cpp" />
-    <ClCompile Include="Character\Customer.cpp" />
-    <ClCompile Include="Character\Player.cpp" />
     <ClCompile Include="Object\Collider.cpp" />
-    <ClCompile Include="Object\InteractableObject.cpp" />
     <ClCompile Include="Object\Object.cpp" />
-    <ClCompile Include="Object\Ray.cpp" />
-    <ClCompile Include="Cooking\Grill.cpp" />
-    <ClCompile Include="Cooking\Ingredient.cpp" />
-    <ClCompile Include="Cooking\IngredientBox.cpp" />
-    <ClCompile Include="Cooking\Plate.cpp" />
-    <ClCompile Include="Cooking\Seat.cpp" />
-    <ClCompile Include="Order\CustomerManager.cpp" />
-    <ClCompile Include="Order\DayManager.cpp" />
-    <ClCompile Include="Order\OrderManager.cpp" />
-    <ClCompile Include="Order\Recipe.cpp" />
-    <ClCompile Include="Event\Cutscene.cpp" />
-    <ClCompile Include="Event\SpecialEvent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\GL.h" />
