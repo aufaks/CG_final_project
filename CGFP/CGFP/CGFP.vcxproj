@@ -29,26 +29,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -102,15 +102,20 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalOptions>opengl32.lib glew32.lib glfw3.lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>opengl32.lib;glew32.lib;glfw3.lib;windowscodecs.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+  <Debugger>
+      <WorkingDirectory>$(ProjectDir)</WorkingDirectory>
+    </Debugger>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -118,17 +123,89 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opengl32.lib;glew32.lib;glfw3.lib;windowscodecs.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+  <Debugger>
+      <WorkingDirectory>$(ProjectDir)</WorkingDirectory>
+    </Debugger>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Core\InputManager.cpp" />
+    <ClCompile Include="Core\SoundManager.cpp" />
+    <ClCompile Include="Scene\CutsceneScene.cpp" />
+    <ClCompile Include="Scene\EndingScene.cpp" />
+    <ClCompile Include="Scene\PlayScene.cpp" />
+    <ClCompile Include="Scene\SceneManager.cpp" />
+    <ClCompile Include="Scene\TitleScene.cpp" />
+    <ClCompile Include="Render\Mesh.cpp" />
+    <ClCompile Include="Render\ResourceManager.cpp" />
+    <ClCompile Include="Render\ShaderManager.cpp" />
+    <ClCompile Include="Render\Texture.cpp" />
+    <ClCompile Include="Render\UI.cpp" />
+    <ClCompile Include="Character\Camera.cpp" />
+    <ClCompile Include="Character\Customer.cpp" />
+    <ClCompile Include="Character\Player.cpp" />
+    <ClCompile Include="Object\Collider.cpp" />
+    <ClCompile Include="Object\InteractableObject.cpp" />
+    <ClCompile Include="Object\Object.cpp" />
+    <ClCompile Include="Object\Ray.cpp" />
+    <ClCompile Include="Cooking\Grill.cpp" />
+    <ClCompile Include="Cooking\Ingredient.cpp" />
+    <ClCompile Include="Cooking\IngredientBox.cpp" />
+    <ClCompile Include="Cooking\Plate.cpp" />
+    <ClCompile Include="Cooking\Seat.cpp" />
+    <ClCompile Include="Order\CustomerManager.cpp" />
+    <ClCompile Include="Order\DayManager.cpp" />
+    <ClCompile Include="Order\OrderManager.cpp" />
+    <ClCompile Include="Order\Recipe.cpp" />
+    <ClCompile Include="Event\Cutscene.cpp" />
+    <ClCompile Include="Event\SpecialEvent.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\GL.h" />
+    <ClInclude Include="Core\InputManager.h" />
+    <ClInclude Include="Core\SoundManager.h" />
+    <ClInclude Include="Scene\CutsceneScene.h" />
+    <ClInclude Include="Scene\EndingScene.h" />
+    <ClInclude Include="Scene\PlayScene.h" />
+    <ClInclude Include="Scene\Scene.h" />
+    <ClInclude Include="Scene\SceneManager.h" />
+    <ClInclude Include="Scene\TitleScene.h" />
+    <ClInclude Include="Render\Mesh.h" />
+    <ClInclude Include="Render\ResourceManager.h" />
+    <ClInclude Include="Render\ShaderManager.h" />
+    <ClInclude Include="Render\Texture.h" />
+    <ClInclude Include="Render\UI.h" />
+    <ClInclude Include="Character\Camera.h" />
+    <ClInclude Include="Character\Customer.h" />
+    <ClInclude Include="Character\Player.h" />
+    <ClInclude Include="Object\Collider.h" />
+    <ClInclude Include="Object\InteractableObject.h" />
+    <ClInclude Include="Object\Object.h" />
+    <ClInclude Include="Object\Ray.h" />
+    <ClInclude Include="Object\StaticObject.h" />
+    <ClInclude Include="Cooking\Grill.h" />
+    <ClInclude Include="Cooking\Ingredient.h" />
+    <ClInclude Include="Cooking\IngredientBox.h" />
+    <ClInclude Include="Cooking\Plate.h" />
+    <ClInclude Include="Cooking\Seat.h" />
+    <ClInclude Include="Order\CustomerManager.h" />
+    <ClInclude Include="Order\DayManager.h" />
+    <ClInclude Include="Order\Order.h" />
+    <ClInclude Include="Order\OrderManager.h" />
+    <ClInclude Include="Order\Recipe.h" />
+    <ClInclude Include="Event\Cutscene.h" />
+    <ClInclude Include="Event\SpecialEvent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl" />

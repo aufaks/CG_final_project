@@ -13,11 +13,229 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="코어">
+      <UniqueIdentifier>{8AD5358C-E1BF-5AB6-9757-6B1A72023BAB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="씬">
+      <UniqueIdentifier>{AE24BB33-2139-52EA-BFD7-F1EB4A7B7D70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="렌더링">
+      <UniqueIdentifier>{B062A9E6-A4D8-5BC1-93A9-B05D74273179}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="카메라·캐릭터">
+      <UniqueIdentifier>{C8D6E99D-D9DC-51E4-A0B8-88354CD752B5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="오브젝트">
+      <UniqueIdentifier>{BFB2BA8F-D319-5F16-8B22-B8917EDC7191}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="요리">
+      <UniqueIdentifier>{3659DF1A-CCF3-530F-BA54-57083C475877}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="주문·진행">
+      <UniqueIdentifier>{615242A8-0FE0-5352-98C2-1D58DAA05935}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="연출">
+      <UniqueIdentifier>{0E1A2E5A-3D56-573F-9E7F-68BFB7DA5A73}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Core\InputManager.cpp">
+      <Filter>코어</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\SoundManager.cpp">
+      <Filter>코어</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\CutsceneScene.cpp">
+      <Filter>씬</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\EndingScene.cpp">
+      <Filter>씬</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\PlayScene.cpp">
+      <Filter>씬</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\SceneManager.cpp">
+      <Filter>씬</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\TitleScene.cpp">
+      <Filter>씬</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Mesh.cpp">
+      <Filter>렌더링</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\ResourceManager.cpp">
+      <Filter>렌더링</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\ShaderManager.cpp">
+      <Filter>렌더링</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\Texture.cpp">
+      <Filter>렌더링</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\UI.cpp">
+      <Filter>렌더링</Filter>
+    </ClCompile>
+    <ClCompile Include="Character\Camera.cpp">
+      <Filter>카메라·캐릭터</Filter>
+    </ClCompile>
+    <ClCompile Include="Character\Customer.cpp">
+      <Filter>카메라·캐릭터</Filter>
+    </ClCompile>
+    <ClCompile Include="Character\Player.cpp">
+      <Filter>카메라·캐릭터</Filter>
+    </ClCompile>
+    <ClCompile Include="Object\Collider.cpp">
+      <Filter>오브젝트</Filter>
+    </ClCompile>
+    <ClCompile Include="Object\InteractableObject.cpp">
+      <Filter>오브젝트</Filter>
+    </ClCompile>
+    <ClCompile Include="Object\Object.cpp">
+      <Filter>오브젝트</Filter>
+    </ClCompile>
+    <ClCompile Include="Object\Ray.cpp">
+      <Filter>오브젝트</Filter>
+    </ClCompile>
+    <ClCompile Include="Cooking\Grill.cpp">
+      <Filter>요리</Filter>
+    </ClCompile>
+    <ClCompile Include="Cooking\Ingredient.cpp">
+      <Filter>요리</Filter>
+    </ClCompile>
+    <ClCompile Include="Cooking\IngredientBox.cpp">
+      <Filter>요리</Filter>
+    </ClCompile>
+    <ClCompile Include="Cooking\Plate.cpp">
+      <Filter>요리</Filter>
+    </ClCompile>
+    <ClCompile Include="Cooking\Seat.cpp">
+      <Filter>요리</Filter>
+    </ClCompile>
+    <ClCompile Include="Order\CustomerManager.cpp">
+      <Filter>주문·진행</Filter>
+    </ClCompile>
+    <ClCompile Include="Order\DayManager.cpp">
+      <Filter>주문·진행</Filter>
+    </ClCompile>
+    <ClCompile Include="Order\OrderManager.cpp">
+      <Filter>주문·진행</Filter>
+    </ClCompile>
+    <ClCompile Include="Order\Recipe.cpp">
+      <Filter>주문·진행</Filter>
+    </ClCompile>
+    <ClCompile Include="Event\Cutscene.cpp">
+      <Filter>연출</Filter>
+    </ClCompile>
+    <ClCompile Include="Event\SpecialEvent.cpp">
+      <Filter>연출</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\GL.h">
+      <Filter>코어</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\InputManager.h">
+      <Filter>코어</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\SoundManager.h">
+      <Filter>코어</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\CutsceneScene.h">
+      <Filter>씬</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\EndingScene.h">
+      <Filter>씬</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\PlayScene.h">
+      <Filter>씬</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\Scene.h">
+      <Filter>씬</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\SceneManager.h">
+      <Filter>씬</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\TitleScene.h">
+      <Filter>씬</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Mesh.h">
+      <Filter>렌더링</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\ResourceManager.h">
+      <Filter>렌더링</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\ShaderManager.h">
+      <Filter>렌더링</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Texture.h">
+      <Filter>렌더링</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\UI.h">
+      <Filter>렌더링</Filter>
+    </ClInclude>
+    <ClInclude Include="Character\Camera.h">
+      <Filter>카메라·캐릭터</Filter>
+    </ClInclude>
+    <ClInclude Include="Character\Customer.h">
+      <Filter>카메라·캐릭터</Filter>
+    </ClInclude>
+    <ClInclude Include="Character\Player.h">
+      <Filter>카메라·캐릭터</Filter>
+    </ClInclude>
+    <ClInclude Include="Object\Collider.h">
+      <Filter>오브젝트</Filter>
+    </ClInclude>
+    <ClInclude Include="Object\InteractableObject.h">
+      <Filter>오브젝트</Filter>
+    </ClInclude>
+    <ClInclude Include="Object\Object.h">
+      <Filter>오브젝트</Filter>
+    </ClInclude>
+    <ClInclude Include="Object\Ray.h">
+      <Filter>오브젝트</Filter>
+    </ClInclude>
+    <ClInclude Include="Object\StaticObject.h">
+      <Filter>오브젝트</Filter>
+    </ClInclude>
+    <ClInclude Include="Cooking\Grill.h">
+      <Filter>요리</Filter>
+    </ClInclude>
+    <ClInclude Include="Cooking\Ingredient.h">
+      <Filter>요리</Filter>
+    </ClInclude>
+    <ClInclude Include="Cooking\IngredientBox.h">
+      <Filter>요리</Filter>
+    </ClInclude>
+    <ClInclude Include="Cooking\Plate.h">
+      <Filter>요리</Filter>
+    </ClInclude>
+    <ClInclude Include="Cooking\Seat.h">
+      <Filter>요리</Filter>
+    </ClInclude>
+    <ClInclude Include="Order\CustomerManager.h">
+      <Filter>주문·진행</Filter>
+    </ClInclude>
+    <ClInclude Include="Order\DayManager.h">
+      <Filter>주문·진행</Filter>
+    </ClInclude>
+    <ClInclude Include="Order\Order.h">
+      <Filter>주문·진행</Filter>
+    </ClInclude>
+    <ClInclude Include="Order\OrderManager.h">
+      <Filter>주문·진행</Filter>
+    </ClInclude>
+    <ClInclude Include="Order\Recipe.h">
+      <Filter>주문·진행</Filter>
+    </ClInclude>
+    <ClInclude Include="Event\Cutscene.h">
+      <Filter>연출</Filter>
+    </ClInclude>
+    <ClInclude Include="Event\SpecialEvent.h">
+      <Filter>연출</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl">
