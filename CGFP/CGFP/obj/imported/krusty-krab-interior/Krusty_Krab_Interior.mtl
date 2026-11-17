@@ -1,0 +1,1602 @@
+newmtl Krabsroof1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Krabsroof1_diff.png
+map_Kd Krabsroof1_diff.png
+map_d Krabsroof1_diff.png
+
+newmtl Tubes1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Tubes1_diff.png
+map_Kd Tubes1_diff.png
+map_d Tubes1_diff.png
+
+newmtl Walldarken1Mtl
+Material Color
+Ka 0.804559 0.804559 0.84337
+Kd 0.804559 0.804559 0.84337
+Ks 0.482735 0.482735 0.506022 
+
+d 0.301961
+
+Ns 0
+
+newmtl Outline1Mtl
+Material Color
+Ka 0.0619075 0.0160677 0.0103978
+Kd 0.0619075 0.0160677 0.0103978
+Ks 0.0371445 0.00964062 0.00623868 
+
+d 1
+
+Ns 0
+
+newmtl Porthole1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Porthole1_diff.png
+map_Kd Porthole1_diff.png
+map_d Porthole1_diff.png
+
+newmtl Icecreamtubvanilla1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Icecreamtubvanilla1_diff.png
+map_Kd Icecreamtubvanilla1_diff.png
+map_d Icecreamtubvanilla1_diff.png
+
+newmtl Officeshelf1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+map_Ka Officeshelf1_diff.png
+map_Kd Officeshelf1_diff.png
+map_d Officeshelf1_diff.png
+
+map_Ns Officeshelf1_spec.png
+
+newmtl MeshessoapDispensercylinder00111Mtl
+Material Color
+Ka 0.186989 0.267358 0.288816
+Kd 0.186989 0.267358 0.288816
+Ks 0.112193 0.160415 0.17329 
+
+d 1
+
+Ns 0
+
+newmtl UnfinishedStall1Mtl
+Material Color
+Ka 0.579547 0.259027 0.0717615
+Kd 0.579547 0.259027 0.0717615
+Ks 0.347728 0.155416 0.0430569 
+
+d 1
+
+Ns 0
+
+newmtl Frezer1Mtl
+Material Color
+Ka 0.476177 0.329729 0.796917
+Kd 0.476177 0.329729 0.796917
+Ks 0.285706 0.197837 0.47815 
+
+d 1
+
+Ns 0
+
+map_Ka Frezer1_diff.png
+map_Kd Frezer1_diff.png
+map_d Frezer1_diff.png
+
+newmtl Purplecabglow1Mtl
+Material Color
+Ka 0.190463 0.212044 0.147998
+Kd 0.190463 0.212044 0.147998
+Ks 0.114278 0.127227 0.0887988 
+
+d 1
+
+Ns 0
+
+newmtl 0daysnonsensesign1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka 0daysnonsensesign1_diff.png
+map_Kd 0daysnonsensesign1_diff.png
+map_d 0daysnonsensesign1_diff.png
+
+newmtl Cb1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+map_Ka Cb1_diff.png
+map_Kd Cb1_diff.png
+map_d Cb1_diff.png
+
+map_Ns Cb1_spec.png
+
+newmtl Cabinet1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Cabinet1_diff.png
+map_Kd Cabinet1_diff.png
+map_d Cabinet1_diff.png
+
+newmtl MeshesfanFarfan1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka MeshesfanFarfan1_diff.png
+map_Kd MeshesfanFarfan1_diff.png
+map_d MeshesfanFarfan1_diff.png
+
+newmtl Officewood1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Officewood1_diff.png
+map_Kd Officewood1_diff.png
+map_d Officewood1_diff.png
+
+newmtl Frontdoorrim1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Frontdoorrim1_diff.png
+map_Kd Frontdoorrim1_diff.png
+map_d Frontdoorrim1_diff.png
+
+newmtl RoundWindow1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka RoundWindow1_diff.png
+map_Kd RoundWindow1_diff.png
+map_d RoundWindow1_diff.png
+
+newmtl Anchorbigol1Mtl
+Material Color
+Ka 0.0118813 0.0151752 0.0356144
+Kd 0.0118813 0.0151752 0.0356144
+Ks 0.0071288 0.00910514 0.0213686 
+
+d 1
+
+Ns 0
+
+newmtl Barrel1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Barrel1_diff.png
+map_Kd Barrel1_diff.png
+map_d Barrel1_diff.png
+
+newmtl Outline4Mtl
+Material Color
+Ka 0.0277553 0.0356144 0.0545923
+Kd 0.0277553 0.0356144 0.0545923
+Ks 0.0166532 0.0213686 0.0327554 
+
+d 1
+
+Ns 0
+
+newmtl Poles1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Poles1_diff.png
+map_Kd Poles1_diff.png
+map_d Poles1_diff.png
+
+newmtl Freezerbox1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Freezerbox1_diff.png
+map_Kd Freezerbox1_diff.png
+map_d Freezerbox1_diff.png
+
+newmtl Flowerarchoutline1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Flowerarchoutline1_diff.png
+map_Kd Flowerarchoutline1_diff.png
+map_d Flowerarchoutline1_diff.png
+
+newmtl Coolrock1Mtl
+Material Color
+Ka 0.505432 0.511398 0.729919
+Kd 0.505432 0.511398 0.729919
+Ks 0.303259 0.306839 0.437951 
+
+d 1
+
+Ns 0
+
+map_Ka Coolrock1_diff.png
+map_Kd Coolrock1_diff.png
+map_d Coolrock1_diff.png
+
+map_Bump Coolrock1_nmap.png
+
+map_Ns Coolrock1_spec.png
+
+newmtl Thin1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 0.980392
+
+Ns 0
+
+map_Ka Thin1_diff.png
+map_Kd Thin1_diff.png
+map_d Thin1_diff.png
+
+newmtl BgBuilding11Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka BgBuilding11_diff.png
+map_Kd BgBuilding11_diff.png
+map_d BgBuilding11_diff.png
+
+newmtl Meshesordersigncube0011Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Meshesordersigncube0011_diff.png
+map_Kd Meshesordersigncube0011_diff.png
+map_d Meshesordersigncube0011_diff.png
+
+newmtl Smallrock11Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Smallrock11_diff.png
+map_Kd Smallrock11_diff.png
+map_d Smallrock11_diff.png
+
+newmtl Buoy1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Buoy1_diff.png
+map_Kd Buoy1_diff.png
+map_d Buoy1_diff.png
+
+newmtl Rock11Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Rock11_diff.png
+map_Kd Rock11_diff.png
+map_d Rock11_diff.png
+
+newmtl Mesheskksignseat11Mtl
+Material Color
+Ka 0.554227 0.383775 0.579547
+Kd 0.554227 0.383775 0.579547
+Ks 0.332536 0.230265 0.347728 
+
+d 1
+
+Ns 0
+
+newmtl Mesheskksignplane1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Mesheskksignplane1_diff.png
+map_Kd Mesheskksignplane1_diff.png
+map_d Mesheskksignplane1_diff.png
+
+newmtl MeshessoapDispensercylinder00112Mtl
+Material Color
+Ka 0 0 0
+Kd 0 0 0
+Ks 0 0 0 
+
+d 1
+
+Ns 0
+
+map_Ka Sidewalls2_diff.png
+map_Kd Sidewalls2_diff.png
+map_d Sidewalls2_diff.png
+
+newmtl Freezerdoorrim1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Freezerdoorrim1_diff.png
+map_Kd Freezerdoorrim1_diff.png
+map_d Freezerdoorrim1_diff.png
+
+newmtl Cboutline1Mtl
+Material Color
+Ka 0.000261544 0.0103978 0.018913
+Kd 0.000261544 0.0103978 0.018913
+Ks 0.000156926 0.00623868 0.0113478 
+
+d 1
+
+Ns 0
+
+newmtl Building0401Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Building0401_diff.png
+map_Kd Building0401_diff.png
+map_d Building0401_diff.png
+
+newmtl Pattystack1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Pattystack1_diff.png
+map_Kd Pattystack1_diff.png
+map_d Pattystack1_diff.png
+
+newmtl Outlines1Mtl
+Material Color
+Ka 0.0717615 0.0738278 0.133209
+Kd 0.0717615 0.0738278 0.133209
+Ks 0.0430569 0.0442967 0.0799251 
+
+d 1
+
+Ns 0
+
+newmtl SeaFlower1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka SeaFlower1_diff.png
+map_Kd SeaFlower1_diff.png
+map_d SeaFlower1_diff.png
+
+newmtl Smallrock1outline1Mtl
+Material Color
+Ka 5.07705e-06 0.0143105 0.0160677
+Kd 5.07705e-06 0.0143105 0.0160677
+Ks 3.04623e-06 0.00858631 0.00964062 
+
+d 1
+
+Ns 0
+
+newmtl Anchorbig1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Anchorbig1_diff.png
+map_Kd Anchorbig1_diff.png
+map_d Anchorbig1_diff.png
+
+newmtl Watchtower1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Watchtower1_diff.png
+map_Kd Watchtower1_diff.png
+map_d Watchtower1_diff.png
+
+newmtl MeshesfanFarbody1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka MeshesfanFarbody1_diff.png
+map_Kd MeshesfanFarbody1_diff.png
+map_d MeshesfanFarbody1_diff.png
+
+newmtl Outline3Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Outline3_diff.png
+map_Kd Outline3_diff.png
+map_d Outline3_diff.png
+
+newmtl Rock12Mtl
+Material Color
+Ka 0.505432 0.511398 0.729919
+Kd 0.505432 0.511398 0.729919
+Ks 0.303259 0.306839 0.437951 
+
+d 1
+
+Ns 0
+
+map_Ka Coolrock1_diff.png
+map_Kd Coolrock1_diff.png
+map_d Coolrock1_diff.png
+
+map_Bump Coolrock1_nmap.png
+
+map_Ns Rock12_spec.png
+
+newmtl SoapDispenser1Mtl
+Material Color
+Ka 1 0.320382 0.722672
+Kd 1 0.320382 0.722672
+Ks 0.6 0.192229 0.433603 
+
+d 1
+
+Ns 0
+
+newmtl Sidewalls2Mtl
+Material Color
+Ka 0.487765 0.487765 0.487765
+Kd 0.487765 0.487765 0.487765
+Ks 0.292659 0.292659 0.292659 
+
+d 0.4
+
+Ns 0
+
+map_Ka Sidewalls2_diff.png
+map_Kd Sidewalls2_diff.png
+map_d Sidewalls2_diff.png
+
+newmtl Rockgianta1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Rockgianta1_diff.png
+map_Kd Rockgianta1_diff.png
+map_d Rockgianta1_diff.png
+
+newmtl Mesheskkenter1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Mesheskkenter1_diff.png
+map_Kd Mesheskkenter1_diff.png
+map_d Mesheskkenter1_diff.png
+
+newmtl Boat1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Boat1_diff.png
+map_Kd Boat1_diff.png
+map_d Boat1_diff.png
+
+newmtl Gloveoutline1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Gloveoutline1_diff.png
+map_Kd Gloveoutline1_diff.png
+map_d Gloveoutline1_diff.png
+
+newmtl Dollar1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+map_Ka Dollar1_diff.png
+map_Kd Dollar1_diff.png
+map_d Dollar1_diff.png
+
+map_Bump Dollar1_nmap.png
+
+map_Ns Dollar1_spec.png
+
+newmtl Purplecab1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Purplecab1_diff.png
+map_Kd Purplecab1_diff.png
+map_d Purplecab1_diff.png
+
+newmtl Kitchenwalls1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Kitchenwalls1_diff.png
+map_Kd Kitchenwalls1_diff.png
+map_d Kitchenwalls1_diff.png
+
+newmtl Bathroomlocker1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+map_Ka Bathroomlocker1_diff.png
+map_Kd Bathroomlocker1_diff.png
+map_d Bathroomlocker1_diff.png
+
+map_Ns Bathroomlocker1_spec.png
+
+newmtl MeshesgalleyGrubcube0011Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka MeshesgalleyGrubcube0011_diff.png
+map_Kd MeshesgalleyGrubcube0011_diff.png
+map_d MeshesgalleyGrubcube0011_diff.png
+
+newmtl Drawer1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Drawer1_diff.png
+map_Kd Drawer1_diff.png
+map_d Drawer1_diff.png
+
+newmtl Icecreamtubstraw1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Icecreamtubstraw1_diff.png
+map_Kd Icecreamtubstraw1_diff.png
+map_d Icecreamtubstraw1_diff.png
+
+newmtl Icecreamtubchoc1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Icecreamtubchoc1_diff.png
+map_Kd Icecreamtubchoc1_diff.png
+map_d Icecreamtubchoc1_diff.png
+
+newmtl Walldarken2Mtl
+Material Color
+Ka 0.804559 0.804559 0.84337
+Kd 0.804559 0.804559 0.84337
+Ks 0.482735 0.482735 0.506022 
+
+d 1
+
+Ns 0
+
+newmtl Cickcle1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Cickcle1_diff.png
+map_Kd Cickcle1_diff.png
+map_d Cickcle1_diff.png
+
+newmtl Dollar2Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Dollar2_diff.png
+map_Kd Dollar2_diff.png
+map_d Dollar2_diff.png
+
+newmtl Smoker1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Smoker1_diff.png
+map_Kd Smoker1_diff.png
+map_d Smoker1_diff.png
+
+newmtl Sidewalls1Mtl
+Material Color
+Ka 0.415148 0.476177 1
+Kd 0.415148 0.476177 1
+Ks 0.249089 0.285706 0.6 
+
+d 1
+
+Ns 0
+
+newmtl Sidewalls4Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Sidewalls4_diff.png
+map_Kd Sidewalls4_diff.png
+map_d Sidewalls4_diff.png
+
+newmtl Grill1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Grill1_diff.png
+map_Kd Grill1_diff.png
+map_d Grill1_diff.png
+
+newmtl Walldarken6Mtl
+Material Color
+Ka 5.07705e-06 0.00168692 0.124741
+Kd 5.07705e-06 0.00168692 0.124741
+Ks 3.04623e-06 0.00101215 0.0748446 
+
+d 1
+
+Ns 0
+
+newmtl Freezermetal1Mtl
+Material Color
+Ka 0.84337 0.991393 1
+Kd 0.84337 0.991393 1
+Ks 0.506022 0.594836 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Freezermetal1_diff.png
+map_Kd Freezermetal1_diff.png
+map_d Freezermetal1_diff.png
+
+newmtl Officeprog1Mtl
+Material Color
+Ka 0.271577 0.147998 0.0242229
+Kd 0.271577 0.147998 0.0242229
+Ks 0.162946 0.0887988 0.0145338 
+
+d 1
+
+Ns 0
+
+newmtl Outermetalwall1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Outermetalwall1_diff.png
+map_Kd Outermetalwall1_diff.png
+map_d Outermetalwall1_diff.png
+
+newmtl Bell1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Bell1_diff.png
+map_Kd Bell1_diff.png
+map_d Bell1_diff.png
+
+newmtl BunTop1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka BunTop1_diff.png
+map_Kd BunTop1_diff.png
+map_d BunTop1_diff.png
+
+newmtl Lettuce1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+map_Ka Lettuce1_diff.png
+map_Kd Lettuce1_diff.png
+map_d Lettuce1_diff.png
+
+newmtl Portholekitchen1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Portholekitchen1_diff.png
+map_Kd Portholekitchen1_diff.png
+map_d Portholekitchen1_diff.png
+
+newmtl Sodagiver1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Sodagiver1_diff.png
+map_Kd Sodagiver1_diff.png
+map_d Sodagiver1_diff.png
+
+newmtl MesheskkSinkcylinder1Mtl
+Material Color
+Ka 0.311181 0.0759261 0.0151752
+Kd 0.311181 0.0759261 0.0151752
+Ks 0.186708 0.0455557 0.00910514 
+
+d 1
+
+Ns 0
+
+newmtl MesheskkSinkcylinder0011Mtl
+Material Color
+Ka 0.0494335 0.0111261 0.000638183
+Kd 0.0494335 0.0111261 0.000638183
+Ks 0.0296601 0.00667565 0.00038291 
+
+d 1
+
+Ns 0
+
+newmtl FreezerBoxes1Mtl
+Material Color
+Ka 0.399293 0.306635 0.612066
+Kd 0.399293 0.306635 0.612066
+Ks 0.239576 0.183981 0.367239 
+
+d 1
+
+Ns 0
+
+map_Ka FreezerBoxes1_diff.png
+map_Kd FreezerBoxes1_diff.png
+map_d FreezerBoxes1_diff.png
+
+newmtl Kitchdesk1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Kitchdesk1_diff.png
+map_Kd Kitchdesk1_diff.png
+map_d Kitchdesk1_diff.png
+
+newmtl Rim1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Rim1_diff.png
+map_Kd Rim1_diff.png
+map_d Rim1_diff.png
+
+newmtl MesheskkFaucetcylinder0011Mtl
+Material Color
+Ka 0.0151752 0.0528416 0.101145
+Kd 0.0151752 0.0528416 0.101145
+Ks 0.00910514 0.031705 0.0606871 
+
+d 1
+
+Ns 0
+
+newmtl MesheskkFaucetcylinder1Mtl
+Material Color
+Ka 0.766744 0.766744 1
+Kd 0.766744 0.766744 1
+Ks 0.460046 0.460046 0.6 
+
+d 1
+
+Ns 0
+
+newmtl Basenew1Mtl
+Material Color
+Ka 0.645555 0.645555 0.645555
+Kd 0.645555 0.645555 0.645555
+Ks 0.387333 0.387333 0.387333 
+
+d 1
+
+Ns 0
+
+map_Ka Basenew1_diff.png
+map_Kd Basenew1_diff.png
+map_d Basenew1_diff.png
+
+newmtl RoundWindow6Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka RoundWindow6_diff.png
+map_Kd RoundWindow6_diff.png
+map_d RoundWindow6_diff.png
+
+newmtl Panrack1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+map_Ka Panrack1_diff.png
+map_Kd Panrack1_diff.png
+map_d Panrack1_diff.png
+
+map_Ns Officeshelf1_spec.png
+
+newmtl Meshpart1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+newmtl Bathroommetal1Mtl
+Material Color
+Ka 0.481952 0.47044 0.487765
+Kd 0.481952 0.47044 0.487765
+Ks 0.289171 0.282264 0.292659 
+
+d 1
+
+Ns 0
+
+newmtl Meshpart2Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Meshpart2_diff.png
+map_Kd Meshpart2_diff.png
+map_d Meshpart2_diff.png
+
+newmtl Meshpart9Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Meshpart9_diff.png
+map_Kd Meshpart9_diff.png
+map_d Meshpart9_diff.png
+
+newmtl Boxeshoriz1Mtl
+Material Color
+Ka 0.348865 0.263175 0.547994
+Kd 0.348865 0.263175 0.547994
+Ks 0.209319 0.157905 0.328796 
+
+d 1
+
+Ns 0
+
+map_Ka Boxeshoriz1_diff.png
+map_Kd Boxeshoriz1_diff.png
+map_d Boxeshoriz1_diff.png
+
+newmtl Condimentcounter1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Condimentcounter1_diff.png
+map_Kd Condimentcounter1_diff.png
+map_d Condimentcounter1_diff.png
+
+newmtl WindowBars1Mtl
+Material Color
+Ka 0.00715504 0.018913 0.0315514
+Kd 0.00715504 0.018913 0.0315514
+Ks 0.00429302 0.0113478 0.0189308 
+
+d 1
+
+Ns 0
+
+map_Ka WindowBars1_diff.png
+map_Kd WindowBars1_diff.png
+map_d WindowBars1_diff.png
+
+map_Bump WindowBars1_nmap.png
+
+map_Ns WindowBars1_spec.png
+
+newmtl Officeflags1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+map_Ka Officeflags1_diff.png
+map_Kd Officeflags1_diff.png
+map_d Officeflags1_diff.png
+
+map_Ns Officeshelf1_spec.png
+
+newmtl Baseside1Mtl
+Material Color
+Ka 0.325037 0.306635 0.267358
+Kd 0.325037 0.306635 0.267358
+Ks 0.195022 0.183981 0.160415 
+
+d 1
+
+Ns 0
+
+map_Ka Baseside1_diff.png
+map_Kd Baseside1_diff.png
+map_d Baseside1_diff.png
+
+newmtl Boxesdiag1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Boxesdiag1_diff.png
+map_Kd Boxesdiag1_diff.png
+map_d Boxesdiag1_diff.png
+
+newmtl Temp1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+newmtl Temp2Mtl
+Material Color
+Ka 0.042987 0.116576 0.348865
+Kd 0.042987 0.116576 0.348865
+Ks 0.0257922 0.0699455 0.209319 
+
+d 1
+
+Ns 0
+
+newmtl Chestnshelves1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+map_Ka Chestnshelves1_diff.png
+map_Kd Chestnshelves1_diff.png
+map_d Chestnshelves1_diff.png
+
+map_Ns Officeshelf1_spec.png
+
+newmtl Officeclock1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Officeclock1_diff.png
+map_Kd Officeclock1_diff.png
+map_d Officeclock1_diff.png
+
+newmtl Greenplanks1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Greenplanks1_diff.png
+map_Kd Greenplanks1_diff.png
+map_d Greenplanks1_diff.png
+
+newmtl MeshesgalleyGrubcube0001Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka MeshesgalleyGrubcube0001_diff.png
+map_Kd MeshesgalleyGrubcube0001_diff.png
+map_d MeshesgalleyGrubcube0001_diff.png
+
+newmtl MeshesgalleyGrubcube0021Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka MeshesgalleyGrubcube0021_diff.png
+map_Kd MeshesgalleyGrubcube0021_diff.png
+map_d MeshesgalleyGrubcube0021_diff.png
+
+newmtl Meshesordersigncube11Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Meshesordersigncube11_diff.png
+map_Kd Meshesordersigncube11_diff.png
+map_d Meshesordersigncube11_diff.png
+
+newmtl Door1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Door1_diff.png
+map_Kd Door1_diff.png
+map_d Door1_diff.png
+
+newmtl Kktable1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Kktable1_diff.png
+map_Kd Kktable1_diff.png
+map_d Kktable1_diff.png
+
+newmtl Misc1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Misc1_diff.png
+map_Kd Misc1_diff.png
+map_d Misc1_diff.png
+
+newmtl Safe1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Safe1_diff.png
+map_Kd Safe1_diff.png
+map_d Safe1_diff.png
+
+newmtl Nozzle1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Nozzle1_diff.png
+map_Kd Nozzle1_diff.png
+map_d Nozzle1_diff.png
+
+newmtl Bottle1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Bottle1_diff.png
+map_Kd Bottle1_diff.png
+map_d Bottle1_diff.png
+
+newmtl Bottle3Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Bottle3_diff.png
+map_Kd Bottle3_diff.png
+map_d Bottle3_diff.png
+
+newmtl Frier1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+map_Ka Frier1_diff.png
+map_Kd Frier1_diff.png
+map_d Frier1_diff.png
+
+map_Ns Officeshelf1_spec.png
+
+newmtl Net1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+map_Ka Net1_diff.png
+map_Kd Net1_diff.png
+map_d Net1_diff.png
+
+newmtl Mesheskkinsidemetalpipeoutline1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Mesheskkinsidemetalpipeoutline1_diff.png
+map_Kd Mesheskkinsidemetalpipeoutline1_diff.png
+map_d Mesheskkinsidemetalpipeoutline1_diff.png
+
+newmtl Mesheskkinsidemetalpipe1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Mesheskkinsidemetalpipe1_diff.png
+map_Kd Mesheskkinsidemetalpipe1_diff.png
+map_d Mesheskkinsidemetalpipe1_diff.png
+
+newmtl Officemetal1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Officemetal1_diff.png
+map_Kd Officemetal1_diff.png
+map_d Officemetal1_diff.png
+
+newmtl Glass1Mtl
+Material Color
+Ka 0.373615 0.368591 0.383775
+Kd 0.373615 0.368591 0.383775
+Ks 0.224169 0.221155 0.230265 
+
+d 1
+
+Ns 0
+
+map_Ka Glass1_diff.png
+map_Kd Glass1_diff.png
+map_d Glass1_diff.png
+
+map_Ns Glass1_spec.png
+
+newmtl ChestGold1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka ChestGold1_diff.png
+map_Kd ChestGold1_diff.png
+map_d ChestGold1_diff.png
+
+newmtl Bathroommetal2Mtl
+Material Color
+Ka 0.487765 0.487765 0.487765
+Kd 0.487765 0.487765 0.487765
+Ks 0.292659 0.292659 0.292659 
+
+d 0.4
+
+Ns 0
+
+map_Ka Sidewalls4_diff.png
+map_Kd Sidewalls4_diff.png
+map_d Sidewalls4_diff.png
+
