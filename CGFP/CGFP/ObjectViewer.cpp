@@ -90,6 +90,7 @@ struct DecodedTexture {
 
 // OpenGL objects that can be shared between contexts (buffers and textures, not VAOs).
 struct GpuPart {
+    bool cullBackFaces = false;
     GLuint vbo = 0;
     GLuint ebo = 0;
     GLuint texture = 0;
@@ -124,6 +125,7 @@ struct LoadResult {
 // ---------------------------------------------------------------------------------------------
 
 struct MeshPart {
+    bool cullBackFaces = false;
     GLuint vao = 0;
     GLuint vbo = 0;
     GLuint ebo = 0;
@@ -1050,6 +1052,9 @@ void UploadResult(LoadResult& result) {
     for (size_t i = 0; i < result.mesh.parts.size(); ++i) {
         const CpuPart& part = result.mesh.parts[i];
         GpuPart gpu;
+        // The table includes an inverted outline hull with constant-color UVs.
+        // Drawing its back faces covers the textured tabletop with solid red.
+        gpu.cullBackFaces = part.materialName == "Kktable1Mtl";
         gpu.color = result.partColors[i];
         gpu.opacity = result.partOpacities[i];
         gpu.transparent = result.partTransparencyFlags[i] != 0;
@@ -1300,6 +1305,7 @@ void FinalizeModel(Model& model, LoadResult& result) {
     if (!result.uploaded) UploadResult(result); // no shared context: upload here on the main thread
     for (const GpuPart& gpu : result.gpuParts) {
         MeshPart part;
+        part.cullBackFaces = gpu.cullBackFaces;
         part.vbo = gpu.vbo;
         part.ebo = gpu.ebo;
         part.texture = gpu.texture;
@@ -1530,12 +1536,19 @@ int main() {
                 glActiveTexture(GL_TEXTURE0);
                 const std::vector<MeshPart>& parts = gModels[shown].parts;
                 auto drawPart = [&](const MeshPart& part) {
+                    if (part.cullBackFaces) {
+                        glEnable(GL_CULL_FACE);
+                        glFrontFace(GL_CCW);
+                        glCullFace(GL_BACK);
+                    }
+                    else glDisable(GL_CULL_FACE);
                     glUniform3fv(uniforms.color, 1, glm::value_ptr(part.color));
                     glUniform1f(uniforms.opacity, part.opacity);
                     glUniform1i(uniforms.useTexture, part.texture != 0 ? GL_TRUE : GL_FALSE);
                     glBindTexture(GL_TEXTURE_2D, part.texture);
                     glBindVertexArray(part.vao);
                     glDrawElements(GL_TRIANGLES, part.indexCount, GL_UNSIGNED_INT, nullptr);
+                    glDisable(GL_CULL_FACE);
                 };
                 for (const MeshPart& part : parts) {
                     if (!part.transparent) drawPart(part);
