@@ -39,10 +39,11 @@
 namespace fs = std::filesystem;
 
 namespace {
-constexpr int kWindowWidth = 1280;
-constexpr int kWindowHeight = 800;
+constexpr int kWindowWidth = 1440;
+constexpr int kWindowHeight = 900;
 constexpr float kMoveSpeed = 5.0f;
 constexpr float kMapMoveSpeed = 2.5f;
+constexpr float kInteriorMapDisplayScale = 600.0f;
 constexpr float kMouseSensitivity = 0.05f;
 constexpr float kPi = 3.14159265358979323846f;
 constexpr size_t kNoModel = static_cast<size_t>(-1);
@@ -89,11 +90,15 @@ struct DecodedTexture {
 
 // OpenGL objects that can be shared between contexts (buffers and textures, not VAOs).
 struct GpuPart {
+    bool cullBackFaces = false;
     GLuint vbo = 0;
     GLuint ebo = 0;
     GLuint texture = 0;
     GLsizei indexCount = 0;
     glm::vec3 color{ 0.8f, 0.8f, 0.8f };
+    glm::vec3 center{ 0.0f };
+    float opacity = 1.0f;
+    bool transparent = false;
 };
 
 struct LoadResult {
@@ -106,7 +111,9 @@ struct LoadResult {
     size_t indexCount = 0;
     size_t uniqueVertexCount = 0;
     CpuMesh mesh;                            // geometry until uploaded
-    std::vector<glm::vec3> partColors;       // parallel to mesh.parts
+    std::vector<glm::vec3> partColors;        // parallel to mesh.parts
+    std::vector<float> partOpacities;          // parallel to mesh.parts
+    std::vector<uint8_t> partTransparencyFlags; // parallel to mesh.parts
     std::vector<std::string> partTextureKeys; // parallel to mesh.parts ("" = no texture)
     std::vector<DecodedTexture> newTextures; // decoded, not uploaded yet
     bool uploaded = false;
@@ -118,12 +125,16 @@ struct LoadResult {
 // ---------------------------------------------------------------------------------------------
 
 struct MeshPart {
+    bool cullBackFaces = false;
     GLuint vao = 0;
     GLuint vbo = 0;
     GLuint ebo = 0;
     GLuint texture = 0;
     GLsizei indexCount = 0;
     glm::vec3 color{ 0.8f, 0.8f, 0.8f };
+    glm::vec3 center{ 0.0f };
+    float opacity = 1.0f;
+    bool transparent = false;
 };
 
 struct Model {
@@ -162,6 +173,8 @@ struct Uniforms {
     GLint view = -1;
     GLint model = -1;
     GLint lightDirection = -1;
+    GLint referenceLighting = -1;
+    GLint opacity = -1;
     GLint texture = -1;
     GLint color = -1;
     GLint useTexture = -1;
@@ -246,6 +259,8 @@ Uniforms FindUniforms(GLuint program) {
     uniforms.view = glGetUniformLocation(program, "uView");
     uniforms.model = glGetUniformLocation(program, "uModel");
     uniforms.lightDirection = glGetUniformLocation(program, "uLightDirection");
+    uniforms.referenceLighting = glGetUniformLocation(program, "uReferenceLighting");
+    uniforms.opacity = glGetUniformLocation(program, "uOpacity");
     uniforms.texture = glGetUniformLocation(program, "uTexture");
     uniforms.color = glGetUniformLocation(program, "uColor");
     uniforms.useTexture = glGetUniformLocation(program, "uUseTexture");
@@ -331,6 +346,8 @@ bool ReadWholeFile(const fs::path& path, std::string& contents) {
 
 struct Material {
     glm::vec3 color{ 0.8f, 0.8f, 0.8f };
+    float opacity = 1.0f;
+    bool supportsTransparency = false;
     fs::path diffuseTexture;
 };
 
@@ -348,10 +365,32 @@ void ReadMaterialLibrary(const fs::path& path, MaterialMap& materials) {
         if (tag == "newmtl") {
             std::string name;
             std::getline(stream, name);
-            current = &materials[Trim(name)];
+            const std::string materialName = Trim(name);
+            current = &materials[materialName];
+            // The source MTL marks several opaque wall overlays with low d values.
+            // Only the glass material should use blended rendering; blending whole
+            // wall sections makes the interior look as if it has holes.
+            current->supportsTransparency = materialName.find("Glass") != std::string::npos ||
+                materialName.find("glass") != std::string::npos;
         }
         else if (current && tag == "Kd") {
             stream >> current->color.r >> current->color.g >> current->color.b;
+        }
+        else if (current && tag == "d") {
+            float opacity = 1.0f;
+            stream >> opacity;
+            if (current->supportsTransparency) current->opacity = opacity;
+        }
+        else if (current && tag == "Tr") {
+            float transparency = 0.0f;
+            stream >> transparency;
+            if (current->supportsTransparency) current->opacity = 1.0f - transparency;
+        }
+        else if (current && tag == "map_d" && current->supportsTransparency) {
+            // Glass1_diff has a uniform semi-transparent alpha channel. Keep this
+            // one material in the blended pass without making ordinary map_d
+            // textures turn walls, floors, and props into transparent surfaces.
+            current->opacity = std::min(current->opacity, 0.65f);
         }
         else if (current && (tag == "map_Kd" || tag == "map_kd")) {
             std::string filename;
@@ -682,14 +721,22 @@ void ParseObj(const fs::path& path, const std::string& contents, CpuMesh& mesh) 
     const glm::vec3 center = (minimum + maximum) * 0.5f;
     const float largestDimension = std::max({ maximum.x - minimum.x, maximum.y - minimum.y, maximum.z - minimum.z });
     const float normalizeScale = largestDimension > 0.00001f ? 2.0f / largestDimension : 1.0f;
-    const bool isRestaurantMap = path.filename() == "BFBBR - Krusty Krab.obj";
-    mesh.displayScale = isRestaurantMap ? 96.0f : 1.0f;
+    const bool isOriginalRestaurantMap = path.filename() == "BFBBR - Krusty Krab.obj";
+    const bool isInteriorMap = path.filename() == "Krusty_Krab_Interior.obj";
+    const bool isRestaurantMap = isOriginalRestaurantMap || isInteriorMap;
+    // This source includes a large surrounding world; scale the restaurant for comfortable interior viewing.
+    mesh.displayScale = isInteriorMap ? kInteriorMapDisplayScale : (isOriginalRestaurantMap ? 96.0f : 1.0f);
     mesh.cameraMoveSpeed = isRestaurantMap ? kMapMoveSpeed : kMoveSpeed;
     mesh.cameraStartPosition = glm::vec3(0.0f, 0.0f, 4.0f);
     mesh.cameraPitch = 0.0f;
-    if (isRestaurantMap) {
+    if (isOriginalRestaurantMap) {
         // The restaurant geometry is grouped around this source-space point in the OBJ.
         const glm::vec3 restaurantInterior(0.73f, 0.30f, -1.40f);
+        mesh.cameraStartPosition = (restaurantInterior - center) * normalizeScale * mesh.displayScale;
+    }
+    else if (isInteriorMap) {
+        // Start inside the main restaurant, facing toward the front entrance (-Z).
+        const glm::vec3 restaurantInterior(-2575.0f, -117.0f, 2588.0f);
         mesh.cameraStartPosition = (restaurantInterior - center) * normalizeScale * mesh.displayScale;
     }
 
@@ -744,6 +791,11 @@ const fs::path& CacheDirectory() {
 
 fs::path CachePathFor(const fs::path& objPath) {
     std::wstring key = fs::absolute(objPath).lexically_normal().wstring();
+    if (objPath.filename() == L"Krusty_Krab_Interior.obj") {
+        // Keep cached vertex positions in sync when this map's presentation scale changes.
+        key += L"|viewer-scale-";
+        key += std::to_wstring(static_cast<int>(kInteriorMapDisplayScale));
+    }
     std::transform(key.begin(), key.end(), key.begin(), [](wchar_t c) { return static_cast<wchar_t>(std::towlower(c)); });
     uint64_t hash = 1469598103934665603ULL;
     for (wchar_t c : key) {
@@ -900,8 +952,9 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
     }
 
     // Read the MTL first so the textures can be decoded on other threads while this thread parses.
-    // A material without a usable map_Kd (or an OBJ without any MTL) falls back to an image found
-    // in the model folder, so that one is decoded early as well.
+    // Only use the folder fallback when the OBJ has no usable material library at all.
+    // Assigning one arbitrary image to every map-less material paints unrelated geometry with
+    // atlas scraps and hides which parts are intentionally untextured in the source asset.
     const MaterialMap materials = LoadMaterials(path, mesh.materialLibraries);
     bool fallbackResolved = false;
     fs::path fallbackTexture;
@@ -912,7 +965,10 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
         bool needsFallback = materials.empty();
         for (const auto& pair : materials) {
             const fs::path& texturePath = pair.second.diffuseTexture;
-            if (texturePath.empty() || !fs::exists(texturePath)) needsFallback = true;
+            if (!texturePath.empty() && !fs::exists(texturePath)) {
+                std::cerr << "Missing diffuse texture for material '" << pair.first << "': "
+                    << texturePath.string() << '\n';
+            }
             else diffuseTextures.push_back(texturePath);
         }
         if (needsFallback) {
@@ -942,7 +998,13 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
         const auto materialIt = materials.find(part.materialName);
         if (materialIt != materials.end()) material = materialIt->second;
         fs::path texturePath = material.diffuseTexture;
-        if (texturePath.empty() || !fs::exists(texturePath)) {
+        // Preserve the table's authored atlas even if an exporter omits its map_Kd binding.
+        if (part.materialName == "Kktable1Mtl" &&
+            (texturePath.empty() || !fs::exists(texturePath))) {
+            const fs::path tableAtlas = path.parent_path() / "Kktable1_diff.png";
+            if (fs::exists(tableAtlas)) texturePath = tableAtlas;
+        }
+        if (materials.empty() && (texturePath.empty() || !fs::exists(texturePath))) {
             if (!fallbackResolved) {
                 fallbackTexture = FindFallbackTexture(path.parent_path());
                 fallbackResolved = true;
@@ -950,6 +1012,8 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
             texturePath = fallbackTexture;
         }
         result.partColors.push_back(material.color);
+        result.partOpacities.push_back(std::clamp(material.opacity, 0.0f, 1.0f));
+        result.partTransparencyFlags.push_back(material.opacity < 0.999f ? 1 : 0);
         result.partTextureKeys.push_back(texturePath.empty() ? std::string() : TextureCacheKey(texturePath));
         partTextures.push_back(std::move(texturePath));
         result.indexCount += part.indices.size();
@@ -988,11 +1052,27 @@ void UploadResult(LoadResult& result) {
     for (size_t i = 0; i < result.mesh.parts.size(); ++i) {
         const CpuPart& part = result.mesh.parts[i];
         GpuPart gpu;
+        // The table includes an inverted outline hull with constant-color UVs.
+        // Drawing its back faces covers the textured tabletop with solid red.
+        gpu.cullBackFaces = part.materialName == "Kktable1Mtl";
         gpu.color = result.partColors[i];
+        gpu.opacity = result.partOpacities[i];
+        gpu.transparent = result.partTransparencyFlags[i] != 0;
+        glm::vec3 minimum(std::numeric_limits<float>::max());
+        glm::vec3 maximum(std::numeric_limits<float>::lowest());
+        for (const Vertex& vertex : part.vertices) {
+            minimum = glm::min(minimum, vertex.position);
+            maximum = glm::max(maximum, vertex.position);
+        }
+        gpu.center = (minimum + maximum) * 0.5f;
         const std::string& key = result.partTextureKeys[i];
         if (!key.empty()) {
             const auto found = gTextureCache.find(key);
             if (found != gTextureCache.end()) gpu.texture = found->second;
+        }
+        if (part.materialName == "Kktable1Mtl") {
+            std::cerr << "Kktable1Mtl texture: " << (key.empty() ? "<none>" : key)
+                << " (OpenGL id " << gpu.texture << ")\n";
         }
         gpu.indexCount = static_cast<GLsizei>(part.indices.size());
         // Both buffers are filled through GL_ARRAY_BUFFER: binding GL_ELEMENT_ARRAY_BUFFER needs a
@@ -1225,11 +1305,15 @@ void FinalizeModel(Model& model, LoadResult& result) {
     if (!result.uploaded) UploadResult(result); // no shared context: upload here on the main thread
     for (const GpuPart& gpu : result.gpuParts) {
         MeshPart part;
+        part.cullBackFaces = gpu.cullBackFaces;
         part.vbo = gpu.vbo;
         part.ebo = gpu.ebo;
         part.texture = gpu.texture;
         part.indexCount = gpu.indexCount;
         part.color = gpu.color;
+        part.center = gpu.center;
+        part.opacity = gpu.opacity;
+        part.transparent = gpu.transparent;
         glGenVertexArrays(1, &part.vao);
         glBindVertexArray(part.vao);
         glBindBuffer(GL_ARRAY_BUFFER, part.vbo);
@@ -1431,9 +1515,12 @@ int main() {
             ProcessLoadResults(window);
             ProcessMovement(window, deltaTime);
 
-            glClearColor(0.055f, 0.070f, 0.10f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             const size_t shown = IndexOfModel(gShownModelId);
+            const bool isInteriorMap = shown != kNoModel &&
+                gModels[shown].path.filename() == "Krusty_Krab_Interior.obj";
+            if (isInteriorMap) glClearColor(0.12f, 0.27f, 0.39f, 1.0f);
+            else glClearColor(0.055f, 0.070f, 0.10f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             if (shown != kNoModel) {
                 glUseProgram(program);
                 const float aspect = static_cast<float>(gWindowWidth) / static_cast<float>(gWindowHeight);
@@ -1444,14 +1531,44 @@ int main() {
                 glUniformMatrix4fv(uniforms.view, 1, GL_FALSE, glm::value_ptr(view));
                 glUniformMatrix4fv(uniforms.model, 1, GL_FALSE, glm::value_ptr(modelMatrix));
                 glUniform3fv(uniforms.lightDirection, 1, glm::value_ptr(glm::normalize(glm::vec3(-0.5f, -1.0f, -0.6f))));
+                glUniform1i(uniforms.referenceLighting, isInteriorMap ? GL_TRUE : GL_FALSE);
                 glUniform1i(uniforms.texture, 0);
                 glActiveTexture(GL_TEXTURE0);
-                for (const MeshPart& part : gModels[shown].parts) {
+                const std::vector<MeshPart>& parts = gModels[shown].parts;
+                auto drawPart = [&](const MeshPart& part) {
+                    if (part.cullBackFaces) {
+                        glEnable(GL_CULL_FACE);
+                        glFrontFace(GL_CCW);
+                        glCullFace(GL_BACK);
+                    }
+                    else glDisable(GL_CULL_FACE);
                     glUniform3fv(uniforms.color, 1, glm::value_ptr(part.color));
+                    glUniform1f(uniforms.opacity, part.opacity);
                     glUniform1i(uniforms.useTexture, part.texture != 0 ? GL_TRUE : GL_FALSE);
                     glBindTexture(GL_TEXTURE_2D, part.texture);
                     glBindVertexArray(part.vao);
                     glDrawElements(GL_TRIANGLES, part.indexCount, GL_UNSIGNED_INT, nullptr);
+                    glDisable(GL_CULL_FACE);
+                };
+                for (const MeshPart& part : parts) {
+                    if (!part.transparent) drawPart(part);
+                }
+                std::vector<const MeshPart*> transparentParts;
+                for (const MeshPart& part : parts) {
+                    if (part.transparent) transparentParts.push_back(&part);
+                }
+                std::sort(transparentParts.begin(), transparentParts.end(), [](const MeshPart* a, const MeshPart* b) {
+                    const glm::vec3 da = a->center - gCamera.position;
+                    const glm::vec3 db = b->center - gCamera.position;
+                    return glm::dot(da, da) > glm::dot(db, db);
+                });
+                if (!transparentParts.empty()) {
+                    glEnable(GL_BLEND);
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                    glDepthMask(GL_FALSE);
+                    for (const MeshPart* part : transparentParts) drawPart(*part);
+                    glDepthMask(GL_TRUE);
+                    glDisable(GL_BLEND);
                 }
                 glBindVertexArray(0);
             }
