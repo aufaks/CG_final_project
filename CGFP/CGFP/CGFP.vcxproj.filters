@@ -48,6 +48,18 @@
     <ClCompile Include="Scene\SceneManager.cpp">
       <Filter>씬</Filter>
     </ClCompile>
+    <ClCompile Include="Scene\TitleScene.cpp">
+      <Filter>씬</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\CutsceneScene.cpp">
+      <Filter>씬</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\EndingScene.cpp">
+      <Filter>씬</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\PlayScene.cpp">
+      <Filter>씬</Filter>
+    </ClCompile>
     <ClCompile Include="Render\Mesh.cpp">
       <Filter>렌더링</Filter>
     </ClCompile>

@@ -142,6 +142,10 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Core\InputManager.cpp" />
     <ClCompile Include="Scene\SceneManager.cpp" />
+    <ClCompile Include="Scene\TitleScene.cpp" />
+    <ClCompile Include="Scene\CutsceneScene.cpp" />
+    <ClCompile Include="Scene\EndingScene.cpp" />
+    <ClCompile Include="Scene\PlayScene.cpp" />
     <ClCompile Include="Render\Mesh.cpp" />
     <ClCompile Include="Render\ResourceManager.cpp" />
     <ClCompile Include="Render\ShaderManager.cpp" />
