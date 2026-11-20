@@ -22,6 +22,19 @@ bool InputManager::GetMouseButton(int button) { return button >= 0 && button < k
 bool InputManager::GetMouseButtonDown(int button) { return button >= 0 && button < kButtonCount && buttonsPressed[button]; }
 glm::vec2 InputManager::GetMouseDelta() { return mouseDelta; }
 
+glm::vec2 InputManager::GetMousePosition() {
+    if (!window) return glm::vec2(0.0f);
+    double x = 0.0, y = 0.0;
+    glfwGetCursorPos(window, &x, &y);
+
+    // 커서 좌표는 창 좌표라서, 화면 배율(DPI)이 100%가 아니면 프레임버퍼 픽셀과 다르다
+    int windowW = 0, windowH = 0, framebufferW = 0, framebufferH = 0;
+    glfwGetWindowSize(window, &windowW, &windowH);
+    glfwGetFramebufferSize(window, &framebufferW, &framebufferH);
+    if (windowW <= 0 || windowH <= 0) return glm::vec2(0.0f);
+    return glm::vec2(static_cast<float>(x) * framebufferW / windowW, static_cast<float>(y) * framebufferH / windowH);
+}
+
 void InputManager::SetCursorCaptured(bool captured) {
     cursorCaptured = captured;
     firstMouse = true; // 캡처 전환 직후 큰 이동량이 튀지 않게 기준점을 다시 잡는다

@@ -151,6 +151,7 @@
     <ClCompile Include="Render\ShaderManager.cpp" />
     <ClCompile Include="Render\Texture.cpp" />
     <ClCompile Include="Render\UI.cpp" />
+    <ClCompile Include="Render\Button.cpp" />
     <ClCompile Include="Character\Camera.cpp" />
     <ClCompile Include="Object\Collider.cpp" />
     <ClCompile Include="Object\Object.cpp" />
@@ -170,6 +171,7 @@
     <ClInclude Include="Render\ShaderManager.h" />
     <ClInclude Include="Render\Texture.h" />
     <ClInclude Include="Render\UI.h" />
+    <ClInclude Include="Render\Button.h" />
     <ClInclude Include="Character\Camera.h" />
     <ClInclude Include="Character\Customer.h" />
     <ClInclude Include="Character\Player.h" />

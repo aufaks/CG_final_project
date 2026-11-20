@@ -75,6 +75,9 @@
     <ClCompile Include="Render\UI.cpp">
       <Filter>렌더링</Filter>
     </ClCompile>
+    <ClCompile Include="Render\Button.cpp">
+      <Filter>렌더링</Filter>
+    </ClCompile>
     <ClCompile Include="Character\Camera.cpp">
       <Filter>카메라·캐릭터</Filter>
     </ClCompile>
@@ -126,6 +129,9 @@
       <Filter>렌더링</Filter>
     </ClInclude>
     <ClInclude Include="Render\UI.h">
+      <Filter>렌더링</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\Button.h">
       <Filter>렌더링</Filter>
     </ClInclude>
     <ClInclude Include="Character\Camera.h">

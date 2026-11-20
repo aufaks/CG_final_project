@@ -1,4 +1,5 @@
 #pragma once
+#include "Render/Button.h"
 #include "Render/UI.h"
 #include "Scene/Scene.h"
 
@@ -10,5 +11,8 @@ public:
     void Render() override;
 
 private:
+    void LayoutButtons(int screenWidth, int screenHeight);
+
     UI ui;
+    Button startButton;
 };

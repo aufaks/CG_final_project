@@ -13,6 +13,7 @@ public:
     static bool GetMouseButton(int button);
     static bool GetMouseButtonDown(int button);
     static glm::vec2 GetMouseDelta(); // 이번 프레임 마우스 이동량(픽셀)
+    static glm::vec2 GetMousePosition(); // 창 왼쪽 위 기준, 프레임버퍼 픽셀 (UI 좌표와 같음)
 
     static void SetCursorCaptured(bool captured);
     static bool IsCursorCaptured();
