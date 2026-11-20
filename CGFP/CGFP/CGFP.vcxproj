@@ -154,6 +154,8 @@
     <ClCompile Include="Render\Button.cpp" />
     <ClCompile Include="Render\Model.cpp" />
     <ClCompile Include="Character\Camera.cpp" />
+    <ClCompile Include="Character\Player.cpp" />
+    <ClCompile Include="Character\Squidward.cpp" />
     <ClCompile Include="Object\Collider.cpp" />
     <ClCompile Include="Object\Object.cpp" />
   </ItemGroup>
@@ -177,6 +179,7 @@
     <ClInclude Include="Character\Camera.h" />
     <ClInclude Include="Character\Customer.h" />
     <ClInclude Include="Character\Player.h" />
+    <ClInclude Include="Character\Squidward.h" />
     <ClInclude Include="Object\Collider.h" />
     <ClInclude Include="Object\InteractableObject.h" />
     <ClInclude Include="Object\Object.h" />

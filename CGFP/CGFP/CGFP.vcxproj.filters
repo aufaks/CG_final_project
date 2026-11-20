@@ -84,6 +84,12 @@
     <ClCompile Include="Character\Camera.cpp">
       <Filter>카메라·캐릭터</Filter>
     </ClCompile>
+    <ClCompile Include="Character\Player.cpp">
+      <Filter>카메라·캐릭터</Filter>
+    </ClCompile>
+    <ClCompile Include="Character\Squidward.cpp">
+      <Filter>카메라·캐릭터</Filter>
+    </ClCompile>
     <ClCompile Include="Object\Collider.cpp">
       <Filter>오브젝트</Filter>
     </ClCompile>
@@ -147,6 +153,9 @@
       <Filter>카메라·캐릭터</Filter>
     </ClInclude>
     <ClInclude Include="Character\Player.h">
+      <Filter>카메라·캐릭터</Filter>
+    </ClInclude>
+    <ClInclude Include="Character\Squidward.h">
       <Filter>카메라·캐릭터</Filter>
     </ClInclude>
     <ClInclude Include="Object\Collider.h">

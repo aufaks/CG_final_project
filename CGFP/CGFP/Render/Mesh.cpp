@@ -3,6 +3,7 @@
 #include <cfloat>
 #include <cstddef>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <sstream>
 
@@ -100,9 +101,9 @@ int ResolveIndex(const std::string& token, size_t count) {
     const int resolved = index > 0 ? index - 1 : static_cast<int>(count) + index;
     return (resolved >= 0 && resolved < static_cast<int>(count)) ? resolved : -1;
 }
-} // namespace
 
-bool Mesh::LoadObj(const std::string& path) {
+// OBJ를 읽어 삼각형마다 콜백을 부른다. group은 마지막 o/g 이름.
+bool ParseObj(const std::string& path, const std::function<void(const std::string& group, const MeshVertex (&tri)[3])>& onTriangle) {
     std::ifstream file(path);
     if (!file) {
         std::cerr << "[Mesh] OBJ 파일을 열 수 없음: " << path << "\n";
@@ -111,15 +112,15 @@ bool Mesh::LoadObj(const std::string& path) {
 
     std::vector<glm::vec3> positions, normals;
     std::vector<glm::vec2> uvs;
-    std::vector<MeshVertex> vertices;
-    std::vector<uint32_t> indices;
-
+    std::string group;
     std::string line;
     while (std::getline(file, line)) {
         std::istringstream stream(line);
         std::string tag;
         stream >> tag;
-        if (tag == "v") {
+        if (tag == "o" || tag == "g") {
+            stream >> group;
+        } else if (tag == "v") {
             glm::vec3 p;
             stream >> p.x >> p.y >> p.z;
             positions.push_back(p);
@@ -162,18 +163,63 @@ bool Mesh::LoadObj(const std::string& path) {
                     if (glm::length(n) > 1e-12f) n = glm::normalize(n);
                     for (MeshVertex& v : tri) v.normal = n;
                 }
-                for (const MeshVertex& v : tri) {
-                    indices.push_back(static_cast<uint32_t>(vertices.size()));
-                    vertices.push_back(v);
-                }
+                onTriangle(group, tri);
             }
         }
     }
 
+    return true;
+}
+
+void AppendTriangle(std::vector<MeshVertex>& vertices, std::vector<uint32_t>& indices, const MeshVertex (&tri)[3]) {
+    for (const MeshVertex& v : tri) {
+        indices.push_back(static_cast<uint32_t>(vertices.size()));
+        vertices.push_back(v);
+    }
+}
+} // namespace
+
+bool Mesh::ReadObj(const std::string& path, std::vector<MeshVertex>& vertices, std::vector<uint32_t>& indices) {
+    vertices.clear();
+    indices.clear();
+    if (!ParseObj(path, [&](const std::string&, const MeshVertex (&tri)[3]) { AppendTriangle(vertices, indices, tri); })) return false;
+    return !vertices.empty();
+}
+
+void Mesh::UpdateVertices(const std::vector<MeshVertex>& vertices) {
+    if (!vbo) return;
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(MeshVertex), vertices.data());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+bool Mesh::LoadObj(const std::string& path) {
+    std::vector<MeshVertex> vertices;
+    std::vector<uint32_t> indices;
+    if (!ParseObj(path, [&](const std::string&, const MeshVertex (&tri)[3]) { AppendTriangle(vertices, indices, tri); })) return false;
     if (vertices.empty()) {
         std::cerr << "[Mesh] OBJ에 면이 없음: " << path << "\n";
         return false;
     }
     Upload(vertices, indices);
     return true;
+}
+
+std::vector<std::unique_ptr<Mesh>> Mesh::LoadObjParts(const std::string& path, int partCount, const PartClassifier& classify) {
+    std::vector<std::vector<MeshVertex>> vertices(partCount);
+    std::vector<std::vector<uint32_t>> indices(partCount);
+    const bool ok = ParseObj(path, [&](const std::string& group, const MeshVertex (&tri)[3]) {
+        const glm::vec3 centroid = (tri[0].position + tri[1].position + tri[2].position) / 3.0f;
+        const int part = classify(group, centroid);
+        if (part >= 0 && part < partCount) AppendTriangle(vertices[part], indices[part], tri);
+    });
+
+    std::vector<std::unique_ptr<Mesh>> parts;
+    if (!ok) return parts;
+    for (int i = 0; i < partCount; ++i) {
+        auto mesh = std::make_unique<Mesh>();
+        if (!vertices[i].empty()) mesh->Upload(vertices[i], indices[i]);
+        parts.push_back(std::move(mesh));
+    }
+    return parts;
 }
