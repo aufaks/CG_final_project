@@ -181,5 +181,11 @@
     <None Include="vertex.glsl">
       <Filter>헤더 파일</Filter>
     </None>
+    <None Include="ui_fragment.glsl">
+      <Filter>헤더 파일</Filter>
+    </None>
+    <None Include="ui_vertex.glsl">
+      <Filter>헤더 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>
