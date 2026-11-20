@@ -60,6 +60,9 @@ int main() {
     if (!ResourceManager::Get().Shaders().Load("ui", "ui_vertex.glsl", "ui_fragment.glsl")) {
         std::cerr << "UI 셰이더를 불러오지 못했습니다.\n";
     }
+    if (!ResourceManager::Get().Shaders().Load("map", "shaders/object_viewer.vert", "shaders/object_viewer.frag")) {
+        std::cerr << "맵 셰이더를 불러오지 못했습니다.\n";
+    }
 
     SceneManager sceneManager;
     sceneManager.ChangeScene(std::make_unique<TitleScene>());
