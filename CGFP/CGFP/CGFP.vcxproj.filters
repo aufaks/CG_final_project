@@ -72,6 +72,9 @@
     <ClCompile Include="Render\Texture.cpp">
       <Filter>렌더링</Filter>
     </ClCompile>
+    <ClCompile Include="Render\UI.cpp">
+      <Filter>렌더링</Filter>
+    </ClCompile>
     <ClCompile Include="Character\Camera.cpp">
       <Filter>카메라·캐릭터</Filter>
     </ClCompile>

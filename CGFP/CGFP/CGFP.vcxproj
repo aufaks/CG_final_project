@@ -150,6 +150,7 @@
     <ClCompile Include="Render\ResourceManager.cpp" />
     <ClCompile Include="Render\ShaderManager.cpp" />
     <ClCompile Include="Render\Texture.cpp" />
+    <ClCompile Include="Render\UI.cpp" />
     <ClCompile Include="Character\Camera.cpp" />
     <ClCompile Include="Object\Collider.cpp" />
     <ClCompile Include="Object\Object.cpp" />

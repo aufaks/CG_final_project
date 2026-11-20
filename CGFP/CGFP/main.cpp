@@ -14,7 +14,7 @@
 
 namespace {
 constexpr int kWindowWidth = 1280;
-constexpr int kWindowHeight = 800;
+constexpr int kWindowHeight = 720;
 constexpr double kMaxDeltaTime = 0.05; // 창을 끌다 놓았을 때 한 번에 크게 진행되지 않게 제한
 } // namespace
 
@@ -41,6 +41,9 @@ int main() {
     }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow*, int width, int height) {
+        glViewport(0, 0, width, height);
+    });
 
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
@@ -53,6 +56,9 @@ int main() {
     InputManager::Init(window);
     if (!ResourceManager::Get().Shaders().Load("basic", "vertex.glsl", "fragment.glsl")) {
         std::cerr << "셰이더를 불러오지 못했습니다. 작업 디렉터리가 프로젝트 폴더(CGFP/CGFP)인지 확인하세요.\n";
+    }
+    if (!ResourceManager::Get().Shaders().Load("ui", "ui_vertex.glsl", "ui_fragment.glsl")) {
+        std::cerr << "UI 셰이더를 불러오지 못했습니다.\n";
     }
 
     SceneManager sceneManager;

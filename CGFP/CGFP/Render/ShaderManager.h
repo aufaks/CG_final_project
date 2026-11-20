@@ -14,6 +14,7 @@ public:
 
     void SetMat4(const char* uniform, const glm::mat4& value) const;
     void SetVec3(const char* uniform, const glm::vec3& value) const;
+    void SetVec4(const char* uniform, const glm::vec4& value) const;
     void SetFloat(const char* uniform, float value) const;
     void SetInt(const char* uniform, int value) const;
     void SetBool(const char* uniform, bool value) const;
