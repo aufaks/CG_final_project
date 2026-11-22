@@ -90,6 +90,12 @@
     <ClCompile Include="Character\Squidward.cpp">
       <Filter>카메라·캐릭터</Filter>
     </ClCompile>
+    <ClCompile Include="Character\Customer.cpp">
+      <Filter>카메라·캐릭터</Filter>
+    </ClCompile>
+    <ClCompile Include="Order\CustomerManager.cpp">
+      <Filter>주문·진행</Filter>
+    </ClCompile>
     <ClCompile Include="Object\Collider.cpp">
       <Filter>오브젝트</Filter>
     </ClCompile>

@@ -1,9 +1,11 @@
 #include "Character/Squidward.h"
 
+#include "Order/Order.h"
 #include "Render/ResourceManager.h"
 #include "Render/ShaderManager.h"
 #include "Render/Texture.h"
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 
@@ -36,6 +38,28 @@ constexpr float kSighDrop = 0.025f;      // 키 대비. 어깨가 내려앉는�
 constexpr float kSighHeadDroop = 20.0f;  // 고개를 푹 숙인다
 constexpr float kSighHeadTilt = 6.0f;
 constexpr float kSighArmHang = 8.0f;     // 팔이 몸 쪽으로 더 처진다
+
+// TakeOrder (takeOrderSeconds 동안): 손님 쪽으로 몸을 기울이고 → 고개 끄덕이며 듣고 → 왼손 메모지에 오른손으로 적고 → 영수증을 뜯는다
+constexpr float kOrderLean = 6.0f;
+constexpr float kOrderNod = 9.0f;
+constexpr float kPadArmForward = 62.0f; // 왼팔: 메모지를 가슴 앞에 든다
+constexpr float kPadArmDrop = 52.0f;
+constexpr float kPenArmForward = 52.0f; // 오른팔: 펜
+constexpr float kPenArmDrop = 58.0f;
+constexpr float kScribbleAngle = 6.0f;
+constexpr float kLookAtPad = 14.0f;
+constexpr float kTearUp = -30.0f; // 영수증을 뜯으며 오른팔을 휙 든다
+constexpr float kReceiptAppear = 0.82f; // takeOrderSeconds 대비, 이때부터 영수증이 손에 있다
+
+// SubmitOrder (submitOrderSeconds 동안, 초 단위 구간은 기본 3.8초 기준 비율): 뒤돌기 → 창구 쪽으로 뒷걸음 →
+// 팔을 뻗어 창구에 영수증을 꽂기 → 팔 내리기 → 제자리로 → 다시 손님 쪽으로 돌기
+constexpr float kReachForward = 88.0f;
+constexpr float kReachPitch = -38.0f; // 창구(키 0.55~1.1 높이)가 어깨보다 높아서 위로 뻗는다
+constexpr float kReachLean = 5.0f;
+constexpr float kReceiptRelease = 0.46f; // submitOrderSeconds 대비, 이때 창구에 넣는다
+
+// 손에 든 영수증 크기 (월드)
+const glm::vec3 kReceiptSize(0.08f, 0.11f, 0.004f);
 
 
 float Smooth(float edge0, float edge1, float x) {
@@ -111,6 +135,21 @@ bool Squidward::LoadModel(const std::string& objPath, const std::string& texture
         w.w[Legs] = rest * (1.0f - head) * (1.0f - upper);
     }
 
+    // 오른손 끝: 오른팔(-X) 정점 중 가장 바깥쪽 근처의 중심. 영수증을 여기에 붙인다.
+    float tipX = FLT_MAX;
+    for (size_t i = 0; i < restVertices.size(); ++i) {
+        if (weights[i].w[RightArm] > 0.9f) tipX = std::min(tipX, restVertices[i].position.x);
+    }
+    glm::vec3 handSum(0.0f);
+    int handCount = 0;
+    for (size_t i = 0; i < restVertices.size(); ++i) {
+        if (weights[i].w[RightArm] > 0.9f && restVertices[i].position.x < tipX + h * 0.03f) {
+            handSum += restVertices[i].position;
+            ++handCount;
+        }
+    }
+    rightHand = handCount ? handSum / static_cast<float>(handCount) : shoulders[0];
+
     posed = restVertices;
     skinnedMesh = std::make_unique<Mesh>();
     skinnedMesh->Upload(restVertices, indices);
@@ -122,8 +161,17 @@ bool Squidward::LoadModel(const std::string& objPath, const std::string& texture
 }
 
 void Squidward::Place(const glm::vec3& feetPosition, float yawDegrees) {
-    transform.position = feetPosition;
-    transform.rotation.y = yawDegrees;
+    basePosition = feetPosition;
+    baseYaw = yawDegrees;
+    UpdateTransform();
+}
+
+bool Squidward::TakeOrder(Order* order) {
+    if (!order || !CanTakeOrder()) return false;
+    handlingOrder = order;
+    handlingOrder->state = OrderState::Taking;
+    EnterState(State::TakeOrder);
+    return true;
 }
 
 void Squidward::EnterState(State next) {
@@ -145,39 +193,124 @@ void Squidward::Update(float deltaTime) {
     case State::Sigh:
         if (stateTime >= sighSeconds) EnterState(State::Idle);
         break;
+    case State::TakeOrder:
+        if (stateTime >= takeOrderSeconds * kReceiptAppear) receiptInHand = true;
+        if (stateTime >= takeOrderSeconds) {
+            if (handlingOrder) handlingOrder->state = OrderState::Taken; // 손님은 이제 자리로 간다
+            EnterState(State::SubmitOrder);
+        }
+        break;
+    case State::SubmitOrder:
+        if (receiptInHand && stateTime >= submitOrderSeconds * kReceiptRelease) {
+            receiptInHand = false;
+            if (handlingOrder && onReceiptSubmitted) onReceiptSubmitted(*handlingOrder);
+        }
+        if (stateTime >= submitOrderSeconds) {
+            handlingOrder = nullptr;
+            EnterState(State::Idle);
+        }
+        break;
     }
+    UpdateTransform();
     Skin();
 }
 
-void Squidward::ComputeBoneMatrices(glm::mat4 (&out)[BoneCount]) const {
-    const glm::vec3 X(1, 0, 0), Z(0, 0, 1);
-
-    // 한숨 곡선 (0~1). 시간 구간은 sighSeconds(기본 4.8초)에 비례한다.
-    float inhale = 0.0f, sigh = 0.0f;
-    if (state == State::Sigh) {
-        const float t = stateTime / sighSeconds;
-        inhale = Smooth(0.0f, 0.29f, t) * (1.0f - Smooth(0.33f, 0.46f, t));
-        sigh = Smooth(0.38f, 0.58f, t) * (1.0f - Smooth(0.71f, 1.0f, t));
+void Squidward::UpdateTransform() {
+    // SubmitOrder: 뒤로 돌아 창구 쪽(원래 정면의 반대)으로 몇 걸음 갔다가 돌아온다
+    float turn = 0.0f, step = 0.0f;
+    if (state == State::SubmitOrder) {
+        const float t = stateTime / submitOrderSeconds;
+        turn = Smooth(0.0f, 0.18f, t) - Smooth(0.82f, 1.0f, t);
+        step = Smooth(0.16f, 0.29f, t) - Smooth(0.68f, 0.82f, t);
     }
+    const float yawRad = glm::radians(baseYaw);
+    const glm::vec3 back(-std::sin(yawRad), 0.0f, -std::cos(yawRad));
+    transform.position = basePosition + back * (windowStep * step);
+    transform.rotation.y = baseYaw + 180.0f * turn;
+}
 
-    const float breath = kIdleBreathHeight * modelHeight * (0.5f + 0.5f * std::sin(idleTime * kIdleBreathSpeed));
-    const float lift = breath + (kInhaleLift * inhale - kSighDrop * sigh) * modelHeight;
-    const glm::mat4 torso = RotateAround(waist, kSighSlump * sigh, X) * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, lift, 0.0f));
-    const float sway = kIdleHeadSwayAngle * std::sin(idleTime * kIdleHeadSwaySpeed);
-    const float armAngle = kArmDropAngle + kInhaleShrug * inhale + kSighArmHang * sigh;
+Squidward::Pose Squidward::ComputePose() const {
+    Pose pose;
+    pose.lift = kIdleBreathHeight * (0.5f + 0.5f * std::sin(idleTime * kIdleBreathSpeed));
+    pose.headRoll = kIdleHeadSwayAngle * std::sin(idleTime * kIdleHeadSwaySpeed);
+    pose.armDrop[0] = pose.armDrop[1] = kArmDropAngle;
+
+    switch (state) {
+    case State::Idle:
+        break;
+    case State::Sigh: {
+        // 한숨 곡선 (0~1). 시간 구간은 sighSeconds(기본 4.8초)에 비례한다.
+        const float t = stateTime / sighSeconds;
+        const float inhale = Smooth(0.0f, 0.29f, t) * (1.0f - Smooth(0.33f, 0.46f, t));
+        const float sigh = Smooth(0.38f, 0.58f, t) * (1.0f - Smooth(0.71f, 1.0f, t));
+        pose.lift += kInhaleLift * inhale - kSighDrop * sigh;
+        pose.lean = kSighSlump * sigh;
+        pose.headPitch = kInhaleHeadBack * inhale + kSighHeadDroop * sigh;
+        pose.headRoll += kSighHeadTilt * sigh;
+        for (float& drop : pose.armDrop) drop += kInhaleShrug * inhale + kSighArmHang * sigh;
+        break;
+    }
+    case State::TakeOrder: {
+        const float t = stateTime / takeOrderSeconds;
+        const float ready = Smooth(0.0f, 0.15f, t) * (1.0f - Smooth(0.9f, 1.0f, t));
+        // 듣는 동안(0.1~0.3) 고개를 두 번 끄덕인다
+        const float listen = (t > 0.1f && t < 0.3f) ? 0.5f - 0.5f * std::cos((t - 0.1f) / 0.2f * 12.5663706f) : 0.0f;
+        const float write = Smooth(0.28f, 0.34f, t) * (1.0f - Smooth(0.72f, 0.78f, t));
+        const float tear = Smooth(0.78f, 0.84f, t) * (1.0f - Smooth(0.86f, 0.97f, t));
+        const float scribble = write * std::sin(stateTime * 22.0f);
+        const float scribble2 = write * std::sin(stateTime * 15.0f + 1.0f);
+
+        pose.lean = kOrderLean * ready;
+        pose.headPitch = kOrderNod * listen + kLookAtPad * write;
+        // 왼팔: 메모지를 가슴 앞에 든다
+        pose.armDrop[1] = kArmDropAngle + (kPadArmDrop - kArmDropAngle) * ready;
+        pose.armForward[1] = kPadArmForward * ready;
+        // 오른팔: 펜으로 끄적이다가 영수증을 뜯어 든다
+        pose.armDrop[0] = kArmDropAngle + (kPenArmDrop - kArmDropAngle) * ready;
+        pose.armForward[0] = kPenArmForward * ready + kScribbleAngle * scribble;
+        pose.armPitch[0] = kScribbleAngle * 0.6f * scribble2 + kTearUp * tear;
+        break;
+    }
+    case State::SubmitOrder: {
+        const float t = stateTime / submitOrderSeconds;
+        const float reach = Smooth(0.29f, 0.42f, t) * (1.0f - Smooth(0.52f, 0.66f, t));
+        // 영수증을 넣는 순간 손을 살짝 밀어 넣는다
+        const float push = Smooth(0.40f, 0.46f, t) * (1.0f - Smooth(0.46f, 0.52f, t));
+        // 걸어가는 동안 통통
+        const float walking = Smooth(0.16f, 0.2f, t) * (1.0f - Smooth(0.25f, 0.29f, t)) +
+                              Smooth(0.68f, 0.72f, t) * (1.0f - Smooth(0.78f, 0.82f, t));
+        pose.lift += 0.008f * walking * std::abs(std::sin(stateTime * 14.0f));
+        pose.lean = kReachLean * reach + 3.0f * push;
+        pose.headPitch = -6.0f * reach; // 창구를 올려다본다
+        pose.armDrop[0] = kArmDropAngle * (1.0f - reach);
+        pose.armForward[0] = kReachForward * reach;
+        pose.armPitch[0] = kReachPitch * reach - 8.0f * push;
+        break;
+    }
+    }
+    return pose;
+}
+
+void Squidward::ComputeBoneMatrices(const Pose& pose, glm::mat4 (&out)[BoneCount]) const {
+    const glm::vec3 X(1, 0, 0), Y(0, 1, 0), Z(0, 0, 1);
+    const glm::mat4 torso = RotateAround(waist, pose.lean, X) *
+                            glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, pose.lift * modelHeight, 0.0f));
 
     out[Legs] = glm::mat4(1.0f);
     out[Torso] = torso;
-    out[Head] = torso * RotateAround(neck, kInhaleHeadBack * inhale + kSighHeadDroop * sigh, X) *
-                RotateAround(neck, sway + kSighHeadTilt * sigh, Z);
-    out[RightArm] = torso * RotateAround(shoulders[0], armAngle, Z); // -X 팔: Z축 +회전이 아래로
-    out[LeftArm] = torso * RotateAround(shoulders[1], -armAngle, Z);
+    out[Head] = torso * RotateAround(neck, pose.headPitch, X) * RotateAround(neck, pose.headRoll, Z);
+    // -X 팔: Z축 +회전이 아래로, Y축 +회전이 앞(+Z)으로, X축 -회전이 위로. +X 팔은 Y·Z 부호가 반대.
+    out[RightArm] = torso * RotateAround(shoulders[0], pose.armPitch[0], X) *
+                    RotateAround(shoulders[0], pose.armForward[0], Y) * RotateAround(shoulders[0], pose.armDrop[0], Z);
+    out[LeftArm] = torso * RotateAround(shoulders[1], pose.armPitch[1], X) *
+                   RotateAround(shoulders[1], -pose.armForward[1], Y) * RotateAround(shoulders[1], -pose.armDrop[1], Z);
 }
 
 void Squidward::Skin() {
     if (!skinnedMesh) return;
     glm::mat4 bones[BoneCount];
-    ComputeBoneMatrices(bones);
+    ComputeBoneMatrices(ComputePose(), bones);
+    rightArmBone = bones[RightArm];
 
     for (size_t i = 0; i < restVertices.size(); ++i) {
         const glm::vec4 p(restVertices[i].position, 1.0f);
@@ -197,11 +330,26 @@ void Squidward::Skin() {
 
 void Squidward::Render(ShaderManager& shaders) const {
     if (!visible || !mesh) return;
-    shaders.SetMat4("uModel", transform.GetMatrix() * modelOffset);
+    const glm::mat4 model = transform.GetMatrix() * modelOffset;
+    shaders.SetMat4("uModel", model);
     shaders.SetVec3("uColor", color);
     shaders.SetFloat("uOpacity", 1.0f);
     const bool useTexture = texture && texture->IsLoaded();
     shaders.SetBool("uUseTexture", useTexture);
     if (useTexture) texture->Bind(0);
     mesh->Draw();
+
+    // 손에 든 영수증: 오른손 끝에 매달린 하얀 종이
+    if (!receiptInHand) return;
+    Mesh* paper = ResourceManager::Get().GetCube();
+    if (!paper) return;
+    const glm::vec3 hand = glm::vec3(model * rightArmBone * glm::vec4(rightHand, 1.0f));
+    const glm::mat4 receipt = glm::translate(glm::mat4(1.0f), hand - glm::vec3(0.0f, kReceiptSize.y * 0.45f, 0.0f)) *
+                              glm::rotate(glm::mat4(1.0f), glm::radians(transform.rotation.y), glm::vec3(0, 1, 0)) *
+                              glm::rotate(glm::mat4(1.0f), glm::radians(-12.0f), glm::vec3(1, 0, 0)) *
+                              glm::scale(glm::mat4(1.0f), kReceiptSize);
+    shaders.SetMat4("uModel", receipt);
+    shaders.SetVec3("uColor", glm::vec3(1.0f));
+    shaders.SetBool("uUseTexture", false);
+    paper->Draw();
 }

@@ -156,6 +156,8 @@
     <ClCompile Include="Character\Camera.cpp" />
     <ClCompile Include="Character\Player.cpp" />
     <ClCompile Include="Character\Squidward.cpp" />
+    <ClCompile Include="Character\Customer.cpp" />
+    <ClCompile Include="Order\CustomerManager.cpp" />
     <ClCompile Include="Object\Collider.cpp" />
     <ClCompile Include="Object\Object.cpp" />
   </ItemGroup>
