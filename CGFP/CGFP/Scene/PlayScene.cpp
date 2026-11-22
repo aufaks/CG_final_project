@@ -165,8 +165,8 @@ void PlayScene::LoadMap() {
         Collider pickupBounds = Collider::FromLocalBounds(
             spatula->GetBoundsMin(), spatula->GetBoundsMax(), spatulaMatrix);
         // 얇은 뒤집개 메시보다 넓은 판정 상자를 사용해 화면 중앙으로 쉽게 조준할 수 있게 한다.
-        pickupBounds.min -= glm::vec3(0.30f, 0.18f, 0.25f);
-        pickupBounds.max += glm::vec3(0.30f, 0.18f, 0.25f);
+        pickupBounds.min -= glm::vec3(0.01f, 0.06f, 0.01f);
+        pickupBounds.max += glm::vec3(0.01f, 0.06f, 0.01f);
         auto pickup = std::make_unique<PickupObject>(pickupBounds);
         spatulaPickup = pickup.get();
         interactables.push_back(std::move(pickup));
@@ -360,6 +360,29 @@ void PlayScene::Render() {
     }
 
     DrawOrderTickets(width, height);
+    if (player.IsFirstPerson()) DrawCrosshair(width, height);
+}
+
+void PlayScene::DrawCrosshair(int width, int height) {
+    const float scale = static_cast<float>(height) / kUIReferenceHeight;
+    const float centerX = static_cast<float>(width) * 0.5f;
+    const float centerY = static_cast<float>(height) * 0.5f;
+    const float outerLength = 18.0f * scale;
+    const float outerThickness = 4.0f * scale;
+    const float innerLength = 14.0f * scale;
+    const float innerThickness = 2.0f * scale;
+
+    ui.Begin(width, height);
+    // 밝은 벽에서도 보이도록 검은 테두리 위에 흰 십자를 겹쳐 그린다.
+    ui.DrawRect(glm::vec4(centerX - outerLength * 0.5f, centerY - outerThickness * 0.5f,
+                          outerLength, outerThickness), glm::vec4(0.0f, 0.0f, 0.0f, 0.75f));
+    ui.DrawRect(glm::vec4(centerX - outerThickness * 0.5f, centerY - outerLength * 0.5f,
+                          outerThickness, outerLength), glm::vec4(0.0f, 0.0f, 0.0f, 0.75f));
+    ui.DrawRect(glm::vec4(centerX - innerLength * 0.5f, centerY - innerThickness * 0.5f,
+                          innerLength, innerThickness), glm::vec4(1.0f));
+    ui.DrawRect(glm::vec4(centerX - innerThickness * 0.5f, centerY - innerLength * 0.5f,
+                          innerThickness, innerLength), glm::vec4(1.0f));
+    ui.End();
 }
 
 void PlayScene::DrawOrderTickets(int width, int height) {

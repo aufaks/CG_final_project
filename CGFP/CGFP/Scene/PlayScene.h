@@ -27,6 +27,7 @@ private:
     void DropHeldSpatula();
     glm::vec3 MapToWorld(const glm::vec3& objPosition) const; // 맵 OBJ 좌표 → 월드 좌표
     void DrawOrderTickets(int width, int height);
+    void DrawCrosshair(int width, int height);
     InteractableObject* FindInteractionTarget(const Ray& ray) const;
 
     std::unique_ptr<Model> map;
