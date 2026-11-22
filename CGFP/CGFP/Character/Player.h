@@ -18,6 +18,7 @@ public:
 
     bool LoadModel(const std::string& objPath, const std::string& texturePath, float height);
     void Spawn(const glm::vec3& feetPosition, float yawDegrees);
+    void Teleport(const glm::vec3& feetPosition);
 
     void Update(float deltaTime) override;
     void Render(ShaderManager& shaders) const override;

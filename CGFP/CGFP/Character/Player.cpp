@@ -108,6 +108,11 @@ void Player::Spawn(const glm::vec3& feetPosition, float yawDegrees) {
     SyncCamera();
 }
 
+void Player::Teleport(const glm::vec3& feetPosition) {
+    transform.position = feetPosition;
+    SyncCamera();
+}
+
 void Player::Update(float deltaTime) {
     if (InputManager::GetKeyDown(GLFW_KEY_V)) firstPerson = !firstPerson;
     UpdateLook();

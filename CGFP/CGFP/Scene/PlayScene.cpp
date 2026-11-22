@@ -2,6 +2,8 @@
 
 #include "Core/GL.h"
 #include "Core/InputManager.h"
+#include "Object/Door.h"
+#include "Object/Ray.h"
 #include "Render/ResourceManager.h"
 
 #include <algorithm>
@@ -20,6 +22,7 @@ constexpr float kMapDisplayScale = 600.0f;
 const glm::vec3 kSpawnFeetInObj(-2576.7f, -125.5f, 2609.0f);
 constexpr float kSpawnYaw = -90.0f;
 constexpr float kPlayerHeight = 1.0f;
+constexpr float kInteractionDistance = 1.5f;
 
 // 징징이: 계산대(배 모양 Boat1Mtl, "ORDER HERE" 간판 아래) 가운데에서 정문(-Z) 쪽 손님을 바라본다
 // (폴더 이름은 squidwards-house지만 안에 든 Mesh_0037.rip.obj는 징징이 캐릭터 모델이다)
@@ -83,6 +86,8 @@ void PlayScene::Enter() {
 
 void PlayScene::Exit() {
     InputManager::SetCursorCaptured(false);
+    focusedObject = nullptr;
+    interactables.clear();
     customerManager.customers.clear(); // 손님 메시(GL 버퍼)는 컨텍스트가 살아 있을 때 지운다
     ui.Release();
     map.reset();
@@ -132,6 +137,15 @@ void PlayScene::LoadMap() {
     mapCenter = center;
     mapScale = scale;
     player.Spawn(MapToWorld(kSpawnFeetInObj), kSpawnYaw);
+    focusedObject = nullptr;
+    interactables.clear();
+    // z=2601 벽에 있는 주방 출입문. 보이는 문짝은 맵에 포함되어 있다.
+    // 이 충돌 박스는 출입문만 감싸고, 두 좌표는 양쪽의 안전한 도착 위치다.
+    interactables.push_back(std::make_unique<Door>(
+        Collider(MapToWorld(glm::vec3(-2593.2f, -125.6f, 2600.2f)),
+                 MapToWorld(glm::vec3(-2586.9f, -113.8f, 2601.7f))),
+        MapToWorld(glm::vec3(-2590.0f, kFloorY, 2597.8f)),
+        MapToWorld(glm::vec3(-2590.0f, kFloorY, 2603.8f))));
     squidward.Place(MapToWorld(kSquidwardFeetInObj), kSquidwardYaw);
     if (customersLoaded) SetupCustomers();
 
@@ -152,14 +166,31 @@ void PlayScene::Update(float deltaTime) {
         InputManager::SetCursorCaptured(!InputManager::IsCursorCaptured());
     }
     player.Update(deltaTime);
+    focusedObject = map && InputManager::IsCursorCaptured()
+        ? FindInteractionTarget(Ray::FromCamera(player.camera)) : nullptr;
+    if (focusedObject && InputManager::GetKeyDown(GLFW_KEY_F)) focusedObject->OnInteract(player);
     orderManager.Update(deltaTime);
     if (map) customerManager.Update(deltaTime);
     if (squidwardLoaded) squidward.Update(deltaTime);
 }
 
+InteractableObject* PlayScene::FindInteractionTarget(const Ray& ray) const {
+    float nearest = kInteractionDistance;
+    InteractableObject* target = nullptr;
+    for (const auto& object : interactables) {
+        if (object->IsDestroyed()) continue;
+        float distance = 0.0f;
+        if (object->GetWorldCollider().IntersectsRay(ray.origin, ray.direction, nearest, distance)) {
+            nearest = distance;
+            target = object.get();
+        }
+    }
+    return target;
+}
+
 void PlayScene::Render() {
     glClearColor(kClearColor.r, kClearColor.g, kClearColor.b, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     if (!map) return;
 
     int width = 0;
@@ -188,6 +219,40 @@ void PlayScene::Render() {
     player.Render(shaders);
     if (squidwardLoaded) squidward.Render(shaders);
     map->Draw(shaders, mapMatrix, camera.position);
+
+    const Mesh* doorMesh = map->GetKitchenDoorMesh();
+    if (focusedObject && doorMesh && dynamic_cast<Door*>(focusedObject)) {
+        shaders.Use("outline");
+        shaders.SetMat4("uProjection", projection);
+        shaders.SetMat4("uView", view);
+        shaders.SetMat4("uModel", mapMatrix);
+
+        glEnable(GL_STENCIL_TEST);
+        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);
+        doorMesh->Draw(); // 원래 문짝에서 화면에 보이는 픽셀만 스텐실에 표시
+
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+        glDisable(GL_DEPTH_TEST);
+        const glm::vec3 center = (doorMesh->GetBoundsMin() + doorMesh->GetBoundsMax()) * 0.5f;
+        const glm::mat4 expanded = mapMatrix * glm::translate(glm::mat4(1.0f), center) *
+            glm::scale(glm::mat4(1.0f), glm::vec3(1.08f, 1.05f, 1.08f)) *
+            glm::translate(glm::mat4(1.0f), -center);
+        shaders.SetMat4("uModel", expanded);
+        doorMesh->Draw();
+
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glDepthMask(GL_TRUE);
+        glStencilMask(0xFF);
+        glDisable(GL_STENCIL_TEST);
+    }
 
     DrawOrderTickets(width, height);
 }

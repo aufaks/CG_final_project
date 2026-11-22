@@ -1,5 +1,6 @@
 #pragma once
 #include "Character/Player.h"
+#include "Object/InteractableObject.h"
 #include "Character/Squidward.h"
 #include "Order/CustomerManager.h"
 #include "Order/OrderManager.h"
@@ -8,6 +9,9 @@
 #include "Scene/Scene.h"
 
 #include <memory>
+#include <vector>
+
+class Ray;
 
 class PlayScene : public Scene {
 public:
@@ -21,6 +25,7 @@ private:
     void SetupCustomers();
     glm::vec3 MapToWorld(const glm::vec3& objPosition) const; // 맵 OBJ 좌표 → 월드 좌표
     void DrawOrderTickets(int width, int height);
+    InteractableObject* FindInteractionTarget(const Ray& ray) const;
 
     std::unique_ptr<Model> map;
     glm::mat4 mapMatrix{ 1.0f };
@@ -31,6 +36,8 @@ private:
     OrderManager orderManager;
     CustomerManager customerManager;
     UI ui;
+    std::vector<std::unique_ptr<InteractableObject>> interactables;
+    InteractableObject* focusedObject = nullptr; // interactables가 소유하는 동안에만 유효
     bool squidwardLoaded = false;
     bool customersLoaded = false;
     bool loadRequested = false; // 첫 프레임은 화면을 먼저 그리고, 다음 Update에서 맵을 읽는다

@@ -32,6 +32,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_STENCIL_BITS, 8);
 
     GLFWwindow* window = glfwCreateWindow(kWindowWidth, kWindowHeight, "집게리아", nullptr, nullptr);
     if (!window) {
@@ -62,6 +63,9 @@ int main() {
     }
     if (!ResourceManager::Get().Shaders().Load("map", "shaders/object_viewer.vert", "shaders/object_viewer.frag")) {
         std::cerr << "맵 셰이더를 불러오지 못했습니다.\n";
+    }
+    if (!ResourceManager::Get().Shaders().Load("outline", "shaders/outline.vert", "shaders/outline.frag")) {
+        std::cerr << "외곽선 셰이더를 불러오지 못했습니다.\n";
     }
     if (!ResourceManager::Get().Shaders().Load("skinned", "shaders/skinned.vert", "shaders/object_viewer.frag")) {
         std::cerr << "스키닝 셰이더를 불러오지 못했습니다.\n";

@@ -127,6 +127,7 @@ bool Model::LoadObj(const std::string& path) {
 
     struct FaceIndex { int position, uv, normal; };
     std::vector<FaceIndex> face;
+    std::vector<MeshVertex> kitchenDoorVertices;
 
     const char* cursor = contents.data();
     const char* const fileEnd = cursor + contents.size();
@@ -185,6 +186,10 @@ bool Model::LoadObj(const std::string& path) {
             for (size_t i = 1; i + 1 < face.size(); ++i) { // 다각형은 부채꼴로 삼각형 분할
                 const FaceIndex tri[3] = { face[0], face[i], face[i + 1] };
                 const glm::vec3& a = positions[tri[0].position];
+                const glm::vec3 centroid = (a + positions[tri[1].position] + positions[tri[2].position]) / 3.0f;
+                const bool kitchenDoor = currentMaterial == "Door1Mtl" &&
+                    centroid.x >= -2593.2f && centroid.x <= -2586.9f &&
+                    centroid.z >= 2600.2f && centroid.z <= 2601.7f;
                 glm::vec3 faceNormal = glm::cross(positions[tri[1].position] - a, positions[tri[2].position] - a);
                 faceNormal = glm::length(faceNormal) > 1e-12f ? glm::normalize(faceNormal) : glm::vec3(0, 1, 0);
                 for (const FaceIndex& index : tri) {
@@ -193,6 +198,7 @@ bool Model::LoadObj(const std::string& path) {
                     v.normal = index.normal >= 0 ? normals[index.normal] : faceNormal;
                     if (index.uv >= 0) v.uv = uvs[index.uv];
                     bucket->push_back(v);
+                    if (kitchenDoor) kitchenDoorVertices.push_back(v);
                 }
             }
         }
@@ -201,6 +207,14 @@ bool Model::LoadObj(const std::string& path) {
     if (buckets.empty()) {
         std::cerr << "[Model] OBJ에 면이 없음: " << path << "\n";
         return false;
+    }
+
+    kitchenDoorMesh.reset();
+    if (!kitchenDoorVertices.empty()) {
+        std::vector<uint32_t> indices(kitchenDoorVertices.size());
+        for (uint32_t i = 0; i < indices.size(); ++i) indices[i] = i;
+        kitchenDoorMesh = std::make_unique<Mesh>();
+        kitchenDoorMesh->Upload(kitchenDoorVertices, indices);
     }
 
     parts.clear();

@@ -32,9 +32,11 @@ public:
     const glm::vec3& GetBoundsMin() const { return boundsMin; }
     const glm::vec3& GetBoundsMax() const { return boundsMax; }
     bool IsLoaded() const { return !parts.empty(); }
+    const Mesh* GetKitchenDoorMesh() const { return kitchenDoorMesh.get(); }
 
 private:
     std::vector<Part> parts;
+    std::unique_ptr<Mesh> kitchenDoorMesh;
     glm::vec3 boundsMin{ 0.0f };
     glm::vec3 boundsMax{ 0.0f };
 };
