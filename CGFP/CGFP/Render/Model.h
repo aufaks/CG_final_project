@@ -28,15 +28,19 @@ public:
 
     // 불투명 파트를 먼저 그리고, 반투명 파트는 카메라에서 먼 순서로 그린다.
     void Draw(ShaderManager& shaders, const glm::mat4& modelMatrix, const glm::vec3& cameraPosition) const;
+    // 외곽선의 스텐실/확장 패스처럼 재질 없이 형상만 다시 그릴 때 사용한다.
+    void DrawGeometry() const;
 
     const glm::vec3& GetBoundsMin() const { return boundsMin; }
     const glm::vec3& GetBoundsMax() const { return boundsMax; }
     bool IsLoaded() const { return !parts.empty(); }
-    const Mesh* GetKitchenDoorMesh() const { return kitchenDoorMesh.get(); }
+    const Mesh* GetKitchenHallDoorMesh() const { return kitchenHallDoorMesh.get(); }
+    const Mesh* GetKitchenStorageDoorMesh() const { return kitchenStorageDoorMesh.get(); }
 
 private:
     std::vector<Part> parts;
-    std::unique_ptr<Mesh> kitchenDoorMesh;
+    std::unique_ptr<Mesh> kitchenHallDoorMesh;
+    std::unique_ptr<Mesh> kitchenStorageDoorMesh;
     glm::vec3 boundsMin{ 0.0f };
     glm::vec3 boundsMax{ 0.0f };
 };

@@ -1,8 +1,9 @@
 #include "Object/Door.h"
 #include "Character/Player.h"
 
-Door::Door(const Collider& bounds, const glm::vec3& first, const glm::vec3& second)
-    : pickingBounds(bounds), firstSide(first), secondSide(second) {}
+Door::Door(const Collider& bounds, const glm::vec3& first, const glm::vec3& second,
+           const Mesh* mesh)
+    : pickingBounds(bounds), firstSide(first), secondSide(second), outlineMesh(mesh) {}
 
 void Door::OnInteract(Player& player) {
     const glm::vec3& position = player.transform.position;

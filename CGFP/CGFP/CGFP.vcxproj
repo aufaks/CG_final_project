@@ -191,6 +191,7 @@
     <ClInclude Include="Object\Collider.h" />
     <ClInclude Include="Object\Door.h" />
     <ClInclude Include="Object\InteractableObject.h" />
+    <ClInclude Include="Object\PickupObject.h" />
     <ClInclude Include="Object\Object.h" />
     <ClInclude Include="Object\Ray.h" />
     <ClInclude Include="Object\StaticObject.h" />

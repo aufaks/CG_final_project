@@ -3,6 +3,7 @@
 #include "Core/GL.h"
 #include "Core/InputManager.h"
 #include "Object/Door.h"
+#include "Object/PickupObject.h"
 #include "Object/Ray.h"
 #include "Render/ResourceManager.h"
 
@@ -13,6 +14,7 @@
 
 namespace {
 const char* kMapPath = "obj/imported/krusty-krab-interior/Krusty_Krab_Interior.obj";
+const char* kSpatulaPath = "obj/imported/spatula-spongebob/SpatulaSpongebob.obj";
 const char* kPlayerModelPath = "obj/imported/spongebob-squarepants/spongebob_bind.obj";
 const char* kPlayerTexturePath = "obj/imported/spongebob-squarepants/textures/spongebob.png";
 
@@ -87,9 +89,12 @@ void PlayScene::Enter() {
 void PlayScene::Exit() {
     InputManager::SetCursorCaptured(false);
     focusedObject = nullptr;
+    spatulaPickup = nullptr;
+    player.heldObject = nullptr;
     interactables.clear();
     customerManager.customers.clear(); // 손님 메시(GL 버퍼)는 컨텍스트가 살아 있을 때 지운다
     ui.Release();
+    spatula.reset();
     map.reset();
 }
 
@@ -136,16 +141,51 @@ void PlayScene::LoadMap() {
     mapMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale)) * glm::translate(glm::mat4(1.0f), -center);
     mapCenter = center;
     mapScale = scale;
+
+    spatula = std::make_unique<Model>();
+    if (spatula->LoadObj(kSpatulaPath)) {
+        // 기존 포크 자리에서 벽면과 평행하게 놓고, 손잡이가 위로 오도록 뒤집어 건다.
+        const glm::vec3 rackHookInObj(-2559.415f, -113.885f, 2616.975f);
+        spatulaMatrix = mapMatrix *
+            glm::translate(glm::mat4(1.0f), rackHookInObj) *
+            glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+            glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f)) *
+            glm::scale(glm::mat4(1.0f), glm::vec3(7.5f));
+
+    } else {
+        std::cerr << "[PlayScene] 뒤집개 모델을 불러오지 못했습니다.\n";
+        spatula.reset();
+    }
+
     player.Spawn(MapToWorld(kSpawnFeetInObj), kSpawnYaw);
     focusedObject = nullptr;
     interactables.clear();
+    spatulaPickup = nullptr;
+    if (spatula) {
+        Collider pickupBounds = Collider::FromLocalBounds(
+            spatula->GetBoundsMin(), spatula->GetBoundsMax(), spatulaMatrix);
+        // 얇은 뒤집개 메시보다 넓은 판정 상자를 사용해 화면 중앙으로 쉽게 조준할 수 있게 한다.
+        pickupBounds.min -= glm::vec3(0.30f, 0.18f, 0.25f);
+        pickupBounds.max += glm::vec3(0.30f, 0.18f, 0.25f);
+        auto pickup = std::make_unique<PickupObject>(pickupBounds);
+        spatulaPickup = pickup.get();
+        interactables.push_back(std::move(pickup));
+    }
     // z=2601 벽에 있는 주방 출입문. 보이는 문짝은 맵에 포함되어 있다.
     // 이 충돌 박스는 출입문만 감싸고, 두 좌표는 양쪽의 안전한 도착 위치다.
     interactables.push_back(std::make_unique<Door>(
         Collider(MapToWorld(glm::vec3(-2593.2f, -125.6f, 2600.2f)),
                  MapToWorld(glm::vec3(-2586.9f, -113.8f, 2601.7f))),
         MapToWorld(glm::vec3(-2590.0f, kFloorY, 2597.8f)),
-        MapToWorld(glm::vec3(-2590.0f, kFloorY, 2603.8f))));
+        MapToWorld(glm::vec3(-2590.0f, kFloorY, 2603.8f)),
+        map->GetKitchenHallDoorMesh()));
+    // z=2630 벽에 있는 주방과 창고 사이 출입문.
+    interactables.push_back(std::make_unique<Door>(
+        Collider(MapToWorld(glm::vec3(-2585.2f, -125.6f, 2628.6f)),
+                 MapToWorld(glm::vec3(-2576.3f, -114.4f, 2631.1f))),
+        MapToWorld(glm::vec3(-2580.8f, kFloorY, 2626.6f)),
+        MapToWorld(glm::vec3(-2580.8f, kFloorY, 2633.2f)),
+        map->GetKitchenStorageDoorMesh()));
     squidward.Place(MapToWorld(kSquidwardFeetInObj), kSquidwardYaw);
     if (customersLoaded) SetupCustomers();
 
@@ -168,10 +208,58 @@ void PlayScene::Update(float deltaTime) {
     player.Update(deltaTime);
     focusedObject = map && InputManager::IsCursorCaptured()
         ? FindInteractionTarget(Ray::FromCamera(player.camera)) : nullptr;
-    if (focusedObject && InputManager::GetKeyDown(GLFW_KEY_F)) focusedObject->OnInteract(player);
+    if (InputManager::GetKeyDown(GLFW_KEY_E)) {
+        if (player.heldObject) {
+            DropHeldSpatula();
+            focusedObject = nullptr;
+        } else if (focusedObject && focusedObject->CanPickUp()) {
+            focusedObject->OnInteract(player);
+        }
+    }
+    if (focusedObject && !focusedObject->CanPickUp() && InputManager::GetKeyDown(GLFW_KEY_F)) {
+        focusedObject->OnInteract(player);
+    }
+    if (spatulaPickup && player.heldObject == spatulaPickup) {
+        // 마인크래프트 도구처럼 화면 오른쪽 아래에서 중앙 위쪽으로 기울여 배치한다.
+        const glm::vec3 forward = player.camera.GetForward();
+        const glm::vec3 right = player.camera.GetRight();
+        const glm::vec3 up = glm::normalize(glm::cross(right, forward));
+        const glm::vec3 position = player.camera.position + forward * 0.55f + right * 0.4f - up * 0.42f;
+        spatulaMatrix = glm::mat4(1.0f);
+        spatulaMatrix[0] = glm::vec4(right, 0.0f);
+        spatulaMatrix[1] = glm::vec4(up, 0.0f);
+        spatulaMatrix[2] = glm::vec4(-forward, 0.0f);
+        spatulaMatrix[3] = glm::vec4(position, 1.0f);
+        spatulaMatrix = spatulaMatrix *
+            glm::rotate(glm::mat4(1.0f), glm::radians(25.0f), glm::vec3(0.0f, 0.0f, 1.0f)) *
+            glm::rotate(glm::mat4(1.0f), glm::radians(-50.0f), glm::vec3(1.0f, 0.0f, 0.0f)) *
+            glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+    }
     orderManager.Update(deltaTime);
     if (map) customerManager.Update(deltaTime);
     if (squidwardLoaded) squidward.Update(deltaTime);
+}
+
+void PlayScene::DropHeldSpatula() {
+    if (!spatula || !spatulaPickup || player.heldObject != spatulaPickup) return;
+
+    // 플레이어 앞 바닥에 뒤집개를 눕히고, 새 위치로 피킹 판정을 옮긴다.
+    const glm::vec3 forward = player.camera.GetFlatForward();
+    const glm::vec3 right = player.camera.GetRight();
+    const glm::vec3 up(0.0f, 1.0f, 0.0f);
+    const glm::vec3 position = player.transform.position + forward * 0.85f + up * 0.02f;
+    spatulaMatrix = glm::mat4(1.0f);
+    spatulaMatrix[0] = glm::vec4(right, 0.0f);
+    spatulaMatrix[1] = glm::vec4(forward, 0.0f);
+    spatulaMatrix[2] = glm::vec4(up, 0.0f);
+    spatulaMatrix[3] = glm::vec4(position, 1.0f);
+
+    Collider pickupBounds = Collider::FromLocalBounds(
+        spatula->GetBoundsMin(), spatula->GetBoundsMax(), spatulaMatrix);
+    pickupBounds.min -= glm::vec3(0.30f, 0.18f, 0.25f);
+    pickupBounds.max += glm::vec3(0.30f, 0.18f, 0.25f);
+    spatulaPickup->SetPickingBounds(pickupBounds);
+    player.heldObject = nullptr;
 }
 
 InteractableObject* PlayScene::FindInteractionTarget(const Ray& ray) const {
@@ -179,6 +267,7 @@ InteractableObject* PlayScene::FindInteractionTarget(const Ray& ray) const {
     InteractableObject* target = nullptr;
     for (const auto& object : interactables) {
         if (object->IsDestroyed()) continue;
+        if (object.get() == player.heldObject) continue;
         float distance = 0.0f;
         if (object->GetWorldCollider().IntersectsRay(ray.origin, ray.direction, nearest, distance)) {
             nearest = distance;
@@ -219,13 +308,18 @@ void PlayScene::Render() {
     player.Render(shaders);
     if (squidwardLoaded) squidward.Render(shaders);
     map->Draw(shaders, mapMatrix, camera.position);
+    const bool holdingSpatula = spatula && spatulaPickup && player.heldObject == spatulaPickup;
+    if (spatula && !holdingSpatula) spatula->Draw(shaders, spatulaMatrix, camera.position);
 
-    const Mesh* doorMesh = map->GetKitchenDoorMesh();
-    if (focusedObject && doorMesh && dynamic_cast<Door*>(focusedObject)) {
+    const Door* focusedDoor = dynamic_cast<Door*>(focusedObject);
+    const Mesh* doorMesh = focusedDoor ? focusedDoor->GetOutlineMesh() : nullptr;
+    const bool outlineSpatula = spatula && spatulaPickup && focusedObject == spatulaPickup;
+    if (doorMesh || outlineSpatula) {
         shaders.Use("outline");
         shaders.SetMat4("uProjection", projection);
         shaders.SetMat4("uView", view);
-        shaders.SetMat4("uModel", mapMatrix);
+        const glm::mat4& outlinedMatrix = outlineSpatula ? spatulaMatrix : mapMatrix;
+        shaders.SetMat4("uModel", outlinedMatrix);
 
         glEnable(GL_STENCIL_TEST);
         glStencilMask(0xFF);
@@ -234,24 +328,35 @@ void PlayScene::Render() {
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
-        doorMesh->Draw(); // 원래 문짝에서 화면에 보이는 픽셀만 스텐실에 표시
+        if (outlineSpatula) spatula->DrawGeometry();
+        else doorMesh->Draw(); // 원래 형상에서 화면에 보이는 픽셀만 스텐실에 표시
 
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
         glStencilMask(0x00);
         glDisable(GL_DEPTH_TEST);
-        const glm::vec3 center = (doorMesh->GetBoundsMin() + doorMesh->GetBoundsMax()) * 0.5f;
-        const glm::mat4 expanded = mapMatrix * glm::translate(glm::mat4(1.0f), center) *
+        const glm::vec3 boundsMin = outlineSpatula ? spatula->GetBoundsMin() : doorMesh->GetBoundsMin();
+        const glm::vec3 boundsMax = outlineSpatula ? spatula->GetBoundsMax() : doorMesh->GetBoundsMax();
+        const glm::vec3 center = (boundsMin + boundsMax) * 0.5f;
+        const glm::mat4 expanded = outlinedMatrix * glm::translate(glm::mat4(1.0f), center) *
             glm::scale(glm::mat4(1.0f), glm::vec3(1.08f, 1.05f, 1.08f)) *
             glm::translate(glm::mat4(1.0f), -center);
         shaders.SetMat4("uModel", expanded);
-        doorMesh->Draw();
+        if (outlineSpatula) spatula->DrawGeometry();
+        else doorMesh->Draw();
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glDepthMask(GL_TRUE);
         glStencilMask(0xFF);
         glDisable(GL_STENCIL_TEST);
+    }
+
+    if (holdingSpatula) {
+        // 월드 깊이와 분리해 벽 가까이에서도 1인칭 도구가 가려지지 않게 한다.
+        glClear(GL_DEPTH_BUFFER_BIT);
+        useShader("map");
+        spatula->Draw(shaders, spatulaMatrix, camera.position);
     }
 
     DrawOrderTickets(width, height);

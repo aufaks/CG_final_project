@@ -127,7 +127,8 @@ bool Model::LoadObj(const std::string& path) {
 
     struct FaceIndex { int position, uv, normal; };
     std::vector<FaceIndex> face;
-    std::vector<MeshVertex> kitchenDoorVertices;
+    std::vector<MeshVertex> kitchenHallDoorVertices;
+    std::vector<MeshVertex> kitchenStorageDoorVertices;
 
     const char* cursor = contents.data();
     const char* const fileEnd = cursor + contents.size();
@@ -187,9 +188,15 @@ bool Model::LoadObj(const std::string& path) {
                 const FaceIndex tri[3] = { face[0], face[i], face[i + 1] };
                 const glm::vec3& a = positions[tri[0].position];
                 const glm::vec3 centroid = (a + positions[tri[1].position] + positions[tri[2].position]) / 3.0f;
-                const bool kitchenDoor = currentMaterial == "Door1Mtl" &&
+                const bool kitchenHallDoor = currentMaterial == "Door1Mtl" &&
                     centroid.x >= -2593.2f && centroid.x <= -2586.9f &&
                     centroid.z >= 2600.2f && centroid.z <= 2601.7f;
+                const bool kitchenStorageDoor = currentMaterial == "Freezerdoorrim1Mtl";
+                // 주방 오른쪽 벽 조리도구 걸이의 두 번째 포크는 별도 뒤집개로 교체한다.
+                const bool replacedRackFork = currentMaterial == "Panrack1Mtl" &&
+                    centroid.x >= -2559.52f && centroid.x <= -2559.31f &&
+                    centroid.y >= -117.64f && centroid.y <= -113.87f &&
+                    centroid.z >= 2616.39f && centroid.z <= 2617.55f;
                 glm::vec3 faceNormal = glm::cross(positions[tri[1].position] - a, positions[tri[2].position] - a);
                 faceNormal = glm::length(faceNormal) > 1e-12f ? glm::normalize(faceNormal) : glm::vec3(0, 1, 0);
                 for (const FaceIndex& index : tri) {
@@ -197,8 +204,9 @@ bool Model::LoadObj(const std::string& path) {
                     v.position = positions[index.position];
                     v.normal = index.normal >= 0 ? normals[index.normal] : faceNormal;
                     if (index.uv >= 0) v.uv = uvs[index.uv];
-                    bucket->push_back(v);
-                    if (kitchenDoor) kitchenDoorVertices.push_back(v);
+                    if (!replacedRackFork) bucket->push_back(v);
+                    if (kitchenHallDoor) kitchenHallDoorVertices.push_back(v);
+                    if (kitchenStorageDoor) kitchenStorageDoorVertices.push_back(v);
                 }
             }
         }
@@ -209,12 +217,19 @@ bool Model::LoadObj(const std::string& path) {
         return false;
     }
 
-    kitchenDoorMesh.reset();
-    if (!kitchenDoorVertices.empty()) {
-        std::vector<uint32_t> indices(kitchenDoorVertices.size());
+    kitchenHallDoorMesh.reset();
+    if (!kitchenHallDoorVertices.empty()) {
+        std::vector<uint32_t> indices(kitchenHallDoorVertices.size());
         for (uint32_t i = 0; i < indices.size(); ++i) indices[i] = i;
-        kitchenDoorMesh = std::make_unique<Mesh>();
-        kitchenDoorMesh->Upload(kitchenDoorVertices, indices);
+        kitchenHallDoorMesh = std::make_unique<Mesh>();
+        kitchenHallDoorMesh->Upload(kitchenHallDoorVertices, indices);
+    }
+    kitchenStorageDoorMesh.reset();
+    if (!kitchenStorageDoorVertices.empty()) {
+        std::vector<uint32_t> indices(kitchenStorageDoorVertices.size());
+        for (uint32_t i = 0; i < indices.size(); ++i) indices[i] = i;
+        kitchenStorageDoorMesh = std::make_unique<Mesh>();
+        kitchenStorageDoorMesh->Upload(kitchenStorageDoorVertices, indices);
     }
 
     parts.clear();
@@ -284,4 +299,8 @@ void Model::Draw(ShaderManager& shaders, const glm::mat4& modelMatrix, const glm
     for (const Part* part : transparentParts) drawPart(*part);
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
+}
+
+void Model::DrawGeometry() const {
+    for (const Part& part : parts) part.mesh->Draw();
 }

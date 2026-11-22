@@ -1,0 +1,15 @@
+newmtl SpatulaBlade
+Ka 0.22 0.22 0.22
+Kd 1 1 1
+Ks 0.65 0.65 0.65
+Ns 90
+d 1
+map_Kd textures/02_-_Default_baseColor.jpeg
+
+newmtl SpatulaHandle
+Ka 0.06 0.06 0.06
+Kd 1 1 1
+Ks 0.18 0.18 0.18
+Ns 24
+d 1
+map_Kd textures/03_-_Default_baseColor.jpeg
