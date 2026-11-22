@@ -28,6 +28,8 @@ anim/<캐릭터>.gltf (+.bin, 텍스처)  게임이 읽는 결과 (tools/mixamo_
 | `StandToSit.fbx` | Stand To Sit | — |
 | `SitIdle.fbx` | Sitting Idle | — |
 
+앉아서 먹는 클립 `SitEat`은 받지 않는다. glTF로 합칠 때 `SitIdle` 첫 프레임 자세에 팔 IK와 허리·고개 숙이기를 얹어 자동으로 만든다 (`tools/mixamo_to_gltf.py`의 `add_eat_clip`).
+
 다운로드 설정: **Format FBX Binary(.fbx), Skin: With Skin, Frames per Second 30, Keyframe Reduction none**
 
 저장 위치: `download/<캐릭터>/` (예: `download/FishG/Walk.fbx`)

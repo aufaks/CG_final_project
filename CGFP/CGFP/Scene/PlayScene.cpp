@@ -39,22 +39,31 @@ const glm::vec3 kCounterFrontInObj(-2576.7f, kFloorY, 2589.6f); // 징징이 정
 constexpr float kSeatTopY = -122.45f;
 constexpr float kSeatRadius = 1.6f; // 통 반지름 (OBJ)
 
-// 테이블 6개 (Kktable1Mtl), 테이블마다 통 의자 2개 중 통로 쪽 하나에 앉는다.
-// 경유점은 계산대 줄(x -2576.7) 양옆으로 빠져서 다른 테이블을 피해 간다.
+// 테이블 6개 (Kktable1Mtl), 테이블마다 양쪽에 통 의자(Barrel1Mtl) 2개. 손님은 빈 테이블의 두 의자 중 하나에 랜덤으로 앉는다.
+// 경유점은 계산대 줄(x -2576.7) 양옆으로 빠져서 다른 테이블을 피해 가고, 안쪽 의자는 테이블을 돌아서 간다.
 struct SeatInObj {
     glm::vec2 seat;  // 통 의자 중심 (x, z)
-    glm::vec2 table; // 테이블 중심 (바라보는 방향)
     std::vector<glm::vec2> path;
+};
+struct TableInObj {
+    glm::vec2 table; // 테이블 중심 (의자가 바라보는 방향)
+    SeatInObj seats[2];
 };
 const glm::vec2 kLeftAisle(-2584.0f, 2587.0f);  // 계산대 왼쪽(-X)으로 빠지는 지점
 const glm::vec2 kRightAisle(-2569.5f, 2587.0f); // 계산대 오른쪽(+X)으로 빠지는 지점
-const std::vector<SeatInObj> kSeatsInObj = {
-    { { -2601.6f, 2567.0f }, { -2606.3f, 2568.55f }, { kLeftAisle, { -2585.0f, 2566.0f } } },
-    { { -2599.7f, 2587.9f }, { -2604.5f, 2586.9f }, { kLeftAisle } },
-    { { -2592.05f, 2580.6f }, { -2592.8f, 2575.85f }, { kLeftAisle } },
-    { { -2560.4f, 2580.1f }, { -2560.75f, 2575.1f }, { kRightAisle } },
-    { { -2553.9f, 2566.95f }, { -2549.1f, 2567.9f }, { kRightAisle, { -2568.0f, 2566.0f } } },
-    { { -2551.6f, 2587.4f }, { -2546.95f, 2585.8f }, { kRightAisle } },
+const std::vector<TableInObj> kTablesInObj = {
+    { { -2606.3f, 2568.55f }, { { { -2601.6f, 2567.0f }, { kLeftAisle, { -2585.0f, 2566.0f } } },
+                                { { -2610.7f, 2570.6f }, { kLeftAisle, { -2585.0f, 2563.0f }, { -2610.7f, 2563.5f } } } } },
+    { { -2604.5f, 2586.9f }, { { { -2599.7f, 2587.9f }, { kLeftAisle } },
+                               { { -2609.25f, 2586.55f }, { kLeftAisle, { -2600.0f, 2581.5f }, { -2611.5f, 2581.5f } } } } },
+    { { -2592.8f, 2575.85f }, { { { -2592.05f, 2580.6f }, { kLeftAisle } },
+                                { { -2593.1f, 2570.9f }, { kLeftAisle, { -2586.5f, 2571.0f } } } } },
+    { { -2560.75f, 2575.1f }, { { { -2560.4f, 2580.1f }, { kRightAisle } },
+                                { { -2561.45f, 2570.4f }, { kRightAisle, { -2566.5f, 2571.0f } } } } },
+    { { -2549.1f, 2567.9f }, { { { -2553.9f, 2566.95f }, { kRightAisle, { -2568.0f, 2566.0f } } },
+                               { { -2544.4f, 2568.35f }, { kRightAisle, { -2568.0f, 2563.0f }, { -2544.4f, 2562.5f } } } } },
+    { { -2546.95f, 2585.8f }, { { { -2551.6f, 2587.4f }, { kRightAisle } },
+                                { { -2542.5f, 2583.75f }, { kRightAisle, { -2550.0f, 2580.5f }, { -2542.0f, 2579.5f } } } } },
 };
 
 // 주문표 UI (1280x720 기준 픽셀, 화면 높이 비율로 늘린다): 화면 위쪽에 하얀 종이가 왼쪽부터 쌓인다
@@ -106,17 +115,20 @@ void PlayScene::SetupCustomers() {
     layout.queueDirection = glm::normalize(layout.entrance - layout.counterFront);
 
     std::vector<Seat> seats;
-    for (size_t i = 0; i < kSeatsInObj.size(); ++i) {
-        const SeatInObj& def = kSeatsInObj[i];
-        Seat seat;
-        seat.number = static_cast<int>(i) + 1;
-        seat.transform.position = MapToWorld(glm::vec3(def.seat.x, kFloorY, def.seat.y));
-        const glm::vec2 toTable = def.table - def.seat;
-        seat.transform.rotation.y = glm::degrees(std::atan2(toTable.x, toTable.y));
-        seat.seatHeight = (kSeatTopY - kFloorY) * mapScale;
-        seat.seatRadius = kSeatRadius * mapScale;
-        for (const glm::vec2& point : def.path) seat.approachPath.push_back(MapToWorld(glm::vec3(point.x, kFloorY, point.y)));
-        seats.push_back(std::move(seat));
+    for (size_t i = 0; i < kTablesInObj.size(); ++i) {
+        const TableInObj& table = kTablesInObj[i];
+        for (const SeatInObj& def : table.seats) {
+            Seat seat;
+            seat.number = static_cast<int>(i) + 1;
+            seat.transform.position = MapToWorld(glm::vec3(def.seat.x, kFloorY, def.seat.y));
+            const glm::vec2 toTable = table.table - def.seat;
+            seat.transform.rotation.y = glm::degrees(std::atan2(toTable.x, toTable.y));
+            seat.seatHeight = (kSeatTopY - kFloorY) * mapScale;
+            seat.seatRadius = kSeatRadius * mapScale;
+            for (const glm::vec2& point : def.path)
+                seat.approachPath.push_back(MapToWorld(glm::vec3(point.x, kFloorY, point.y)));
+            seats.push_back(std::move(seat));
+        }
     }
     customerManager.Setup(layout, std::move(seats), squidwardLoaded ? &squidward : nullptr, &orderManager);
 }
@@ -159,6 +171,8 @@ void PlayScene::Update(float deltaTime) {
     if (InputManager::GetKeyDown(GLFW_KEY_P)) {
         InputManager::SetCursorCaptured(!InputManager::IsCursorCaptured());
     }
+    // 테스트: 음식 서빙이 생기기 전까지 F 키로 앉아 있는 손님에게 밥을 준다
+    if (InputManager::GetKeyDown(GLFW_KEY_F)) customerManager.StartEatingAll();
     player.Update(deltaTime);
     orderManager.Update(deltaTime);
     if (map) customerManager.Update(deltaTime);

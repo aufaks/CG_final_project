@@ -1,0 +1,13 @@
+newmtl Sodagiver1Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.6 0.6 0.6 
+
+d 1
+
+Ns 0
+
+map_Ka Sodagiver1_diff.png
+map_Kd Sodagiver1_diff.png
+map_d Sodagiver1_diff.png

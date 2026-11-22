@@ -141,7 +141,11 @@ void Player::Spawn(const glm::vec3& feetPosition, float yawDegrees) {
 }
 
 void Player::Update(float deltaTime) {
-    if (InputManager::GetKeyDown(GLFW_KEY_V)) firstPerson = !firstPerson;
+    if (InputManager::GetKeyDown(GLFW_KEY_V)) { // 1인칭 → 후방 → 전방 → 1인칭
+        view = view == View::FirstPerson ? View::ThirdBack
+             : view == View::ThirdBack   ? View::ThirdFront
+                                         : View::FirstPerson;
+    }
     UpdateLook();
     const glm::vec3 before = transform.position;
     UpdateMovement(deltaTime);
@@ -226,12 +230,23 @@ void Player::SyncCamera() {
     transform.rotation.y = 90.0f - camera.yaw;
 
     const glm::vec3 eye = transform.position + glm::vec3(0.0f, eyeHeight, 0.0f);
-    if (firstPerson) {
+    camera.useLookAt = false;
+    switch (view) {
+    case View::FirstPerson:
         camera.position = eye + camera.GetFlatForward() * eyeForward;
         camera.nearPlane = firstPersonNear;
-    } else {
+        break;
+    case View::ThirdBack:
         camera.nearPlane = kThirdPersonNear;
         camera.position = eye - camera.GetForward() * kThirdPersonDistance + glm::vec3(0.0f, kThirdPersonHeight, 0.0f);
+        break;
+    case View::ThirdFront:
+        // 플레이어 앞에서 얼굴을 바라본다. 마우스로 위아래를 움직이면 앞쪽에서 위아래로 돈다. 이동 방향은 그대로 플레이어 정면.
+        camera.nearPlane = kThirdPersonNear;
+        camera.position = eye + camera.GetForward() * kThirdPersonDistance + glm::vec3(0.0f, kThirdPersonHeight, 0.0f);
+        camera.useLookAt = true;
+        camera.lookAt = eye;
+        break;
     }
 }
 

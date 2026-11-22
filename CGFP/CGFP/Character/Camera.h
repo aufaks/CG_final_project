@@ -19,7 +19,11 @@ public:
     glm::vec3 GetForward() const;     // 바라보는 방향(위아래 포함)
     glm::vec3 GetFlatForward() const; // 수평 전방(이동용)
     glm::vec3 GetRight() const;       // 수평 오른쪽(이동용)
-    glm::vec3 GetTarget() const { return position + GetForward(); }
+    glm::vec3 GetTarget() const { return useLookAt ? lookAt : position + GetForward(); }
+
+    // 켜면 yaw/pitch 방향 대신 lookAt 점을 본다 (3인칭 전방 시점: 플레이어 앞에서 얼굴을 본다)
+    bool useLookAt = false;
+    glm::vec3 lookAt{ 0.0f };
 
     glm::mat4 GetViewMatrix() const;
     glm::mat4 GetProjectionMatrix(float aspect) const;

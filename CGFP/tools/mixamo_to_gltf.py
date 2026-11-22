@@ -12,6 +12,7 @@ Mixamo에는 저폴리 대용 모델(프록시, tools/make_mixamo_proxy.py)을 �
     blender --background --factory-startup --python tools/mixamo_to_gltf.py -- [캐릭터 이름...]
 캐릭터 이름을 안 주면 download 아래 폴더 전부를 변환한다.
 """
+import math
 import os
 import shutil
 import sys
@@ -20,7 +21,7 @@ import zipfile
 
 import bmesh
 import bpy
-from mathutils import Vector
+from mathutils import Quaternion, Vector
 
 WELD_DISTANCE = 0.01  # 자동 가중치용 사본에서 이 거리(Blender 단위, 키 약 1.7) 안의 정점을 합친다
 
@@ -115,8 +116,161 @@ def auto_weights(original, armature, character):
     return unweighted
 
 
+# 몸통이 딱딱한 상자인 캐릭터. 자동 가중치가 상자 옆면(눈 옆)을 어깨·팔에, 윗부분을 목·머리에 나눠 붙여서
+# 팔을 흔들거나 걸을 때 상자가 찌그러지고 눈 옆이 패인다. 상자 정점은 전부 가슴 뼈(Spine2) 하나에 붙인다.
+RIGID_BODY = {'SpongeBob'}
+
+
+def make_body_rigid(mesh, armature):
+    """팔(T포즈 팔 높이 띠의 바깥쪽)과 바지(Spine·Spine1 중간 아래)를 뺀 몸통 정점을 Spine2 하나에 붙인다."""
+    def joint(name):
+        return armature.matrix_world @ armature.data.bones['mixamorig:' + name].head_local
+
+    hips, arm, head = joint('Hips'), joint('LeftArm'), joint('Head')
+    torso = head.z - hips.z
+    bottom = (joint('Spine').z + joint('Spine1').z) * 0.5  # 이 아래는 바지·다리
+    arm_x = abs(arm.x - hips.x)                            # 어깨 관절 = 몸통 옆면 근처
+    band = 0.2 * torso                                     # 팔(소매) 두께의 절반
+    body_half = arm_x * 1.35                               # 몸통 옆면 바깥 한계 (이보다 밖은 팔·손)
+    spine2 = mesh.vertex_groups.get('mixamorig:Spine2') or mesh.vertex_groups.new(name='mixamorig:Spine2')
+    body = []
+    for v in mesh.data.vertices:
+        p = mesh.matrix_world @ v.co
+        dx = abs(p.x - hips.x)
+        if p.z < bottom or dx > body_half:
+            continue
+        if abs(p.z - arm.z) < band and dx > arm_x * 0.95:
+            continue  # 소매·팔
+        body.append(v.index)
+    for group in mesh.vertex_groups:
+        if group != spine2:
+            group.remove(body)
+    spine2.add(body, 1.0, 'REPLACE')
+    print('[%s] 몸통 정점 %d개를 Spine2에 붙임' % (armature.name, len(body)))
+
+
+EAT_CLIP = 'SitEat'
+EAT_SECONDS = 3.0
+# 먹기 한 번 (진행도 0~1): 접시에서 뜨기 → 입으로 → 입에 댄 채 → 접시로 → 씹으며 다시 뜨기
+EAT_KEYS = [  # (진행도, 오른손 위치: 0 = 접시, 1 = 입)
+    (0.00, 0.0), (0.08, 0.0), (0.36, 1.0), (0.52, 1.0), (0.78, 0.0), (1.00, 0.0),
+]
+# 손님들은 팔이 짧아서 손이 입까지 못 간다. 손을 가슴 앞으로 올리고 몸·고개를 숙여 입을 손에 댄다.
+EAT_BOW_KEYS = [  # (진행도, 허리 숙이기(도), 고개 숙이기(도)): 손을 맞으러 숙였다가 씹으며 고개 까딱
+    (0.00, 0.0, 0.0), (0.30, 0.0, 0.0), (0.42, 18.0, 16.0), (0.52, 18.0, 12.0), (0.66, 0.0, 0.0),
+    (0.72, 0.0, 6.0), (0.79, 0.0, 0.0), (0.86, 0.0, 6.0), (0.93, 0.0, 0.0), (1.00, 0.0, 0.0),
+]
+EAT_BOW_BONES = {'Spine': 0.3, 'Spine1': 0.35, 'Spine2': 0.35}  # 허리 숙이기를 나눠 맡는 뼈 (+X 회전 = 앞으로)
+
+
+def add_eat_clip(armature, clips):
+    """SitIdle 첫 프레임 자세에서 오른손으로 떠먹는 반복 클립(SitEat)을 만들어 clips에 더한다.
+
+    Mixamo에 앉아서 먹는 동작이 없어서 직접 만든다. 접시(테이블 위)·입 위치에 빈 오브젝트를 두고
+    팔에 IK를 걸어 손목이 따라가게 한 뒤 키프레임으로 굽는다 (뼈대 길이가 다른 캐릭터에도 맞는다).
+    왼손은 테이블 위에 올려 둔다. 몸·고개는 손을 맞으러 숙였다가 씹는 동안 까딱인다.
+    """
+    sit = dict(clips).get('SitIdle')
+    if sit is None or EAT_CLIP in dict(clips):
+        return
+    scene = bpy.context.scene
+    data = armature.animation_data or armature.animation_data_create()
+    bones = armature.pose.bones
+    armature.data.pose_position = 'POSE'
+
+    # SitIdle 첫 프레임 자세를 고정 자세로 쓴다
+    data.action = sit
+    if hasattr(data, 'action_slot') and getattr(sit, 'slots', None):
+        data.action_slot = sit.slots[0]
+    scene.frame_set(int(sit.frame_range[0]))
+    static = {pb.name: (pb.location.copy(), pb.rotation_quaternion.copy(), pb.scale.copy()) for pb in bones}
+    data.action = None
+    for pb in bones:
+        pb.rotation_mode = 'QUATERNION'
+        pb.location, pb.rotation_quaternion, pb.scale = static[pb.name]
+    bpy.context.view_layer.update()
+
+    def world(name, tail=False):
+        pb = bones['mixamorig:' + name]
+        return armature.matrix_world @ (pb.tail if tail else pb.head)
+
+    rest = armature.data.bones
+    foot = armature.matrix_world @ rest['mixamorig:LeftFoot'].head_local
+    toe = armature.matrix_world @ rest['mixamorig:LeftToeBase'].head_local
+    up = Vector((0.0, 0.0, 1.0))
+    forward = Vector((toe.x - foot.x, toe.y - foot.y, 0.0)).normalized()
+    side = forward.cross(up)  # 캐릭터 기준 한쪽 옆 (어느 쪽인지는 어깨 위치로 정한다)
+    hips, head = world('Hips'), world('Head')
+    unit = (head - hips).length  # 엉덩이 → 목 길이. 캐릭터 크기 기준
+
+    def targets(arm):
+        shoulder_side = (world(arm) - head).dot(side)
+        plate = hips + up * 0.45 * unit + forward * 0.8 * unit + side * shoulder_side * 0.6
+        mouth = world(arm) + up * 0.3 * unit + forward * 0.45 * unit - side * shoulder_side * 0.6  # 가슴 앞 가운데
+        return plate, mouth
+
+    frames = round(EAT_SECONDS * scene.render.fps)
+    start = 0
+
+    def add_target(name, location):
+        empty = bpy.data.objects.new(name, None)
+        scene.collection.objects.link(empty)
+        empty.location = location
+        return empty
+
+    def add_ik(bone, target):
+        ik = bones['mixamorig:' + bone].constraints.new('IK')
+        ik.target = target
+        ik.chain_count = 2  # 아래팔 + 위팔
+        return ik
+
+    right_plate, right_mouth = targets('RightArm')
+    left_plate, _ = targets('LeftArm')
+    right = add_target('EatRight', right_plate)
+    left = add_target('EatLeft', left_plate - forward * 0.15 * unit)
+    for u, k in EAT_KEYS:
+        right.location = right_plate.lerp(right_mouth, k)
+        right.keyframe_insert('location', frame=start + u * frames)
+    add_ik('RightForeArm', right)
+    add_ik('LeftForeArm', left)
+
+    # 고정 자세 + 고개 키를 임시 액션에 넣는다
+    temp = bpy.data.actions.new('EatTemp')
+    data.action = temp
+    for pb in bones:
+        for path in ('location', 'rotation_quaternion', 'scale'):
+            pb.keyframe_insert(path, frame=start)
+    bows = [(name, share) for name, share in EAT_BOW_BONES.items() if 'mixamorig:' + name in bones]
+    for u, bow, nod in EAT_BOW_KEYS:
+        for name, degrees in bows + [('Head', None)]:
+            pb = bones['mixamorig:' + name]
+            angle = nod if degrees is None else bow * degrees
+            pb.rotation_quaternion = static[pb.name][1] @ Quaternion((1.0, 0.0, 0.0), math.radians(angle))
+            pb.keyframe_insert('rotation_quaternion', frame=start + u * frames)
+
+    # IK 결과를 키프레임으로 굽는다
+    bpy.ops.object.select_all(action='DESELECT')
+    armature.select_set(True)
+    bpy.context.view_layer.objects.active = armature
+    bpy.ops.object.mode_set(mode='POSE')
+    bpy.ops.nla.bake(frame_start=start, frame_end=start + frames, step=1, only_selected=False,
+                     visual_keying=True, clear_constraints=True, use_current_action=False, bake_types={'POSE'})
+    bpy.ops.object.mode_set(mode='OBJECT')
+    eat = data.action
+    eat.name = EAT_CLIP
+    eat.use_fake_user = True
+    data.action = None
+    bpy.data.actions.remove(temp)
+    for empty in (right, left):
+        bpy.data.objects.remove(empty, do_unlink=True)
+    clips.append((EAT_CLIP, eat))
+    print('[%s] %s 클립 %d프레임 만듦' % (armature.name, EAT_CLIP, frames))
+
+
 def export_gltf(character, armature, original, clips):
-    """메시를 뼈대에 붙이고 클립마다 NLA 트랙을 만들어 anim/<캐릭터>.gltf로 내보낸다."""
+    """메시를 뼈대에 붙이고 클립마다 NLA 트랙을 만들어 anim/<캐릭터>.gltf로 내보낸다.
+    앉아서 먹는 클립(SitEat)이 없으면 SitIdle로 만들어 더한다."""
+    add_eat_clip(armature, clips)
     # 뼈대에 붙이기
     world = original.matrix_world.copy()
     original.parent = armature
@@ -229,6 +383,8 @@ def convert(character):
         bpy.ops.object.modifier_apply(modifier=transfer.name)
         original.vertex_groups.remove(original.vertex_groups['_Unweighted'])
     bpy.data.objects.remove(proxy, do_unlink=True)
+    if character in RIGID_BODY:
+        make_body_rigid(original, armature)
 
     out_path = export_gltf(character, armature, original, clips)
     shutil.rmtree(work, ignore_errors=True)

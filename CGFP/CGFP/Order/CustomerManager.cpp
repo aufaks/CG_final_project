@@ -153,12 +153,23 @@ void CustomerManager::UpdateOrdering(Customer& customer) {
 }
 
 Seat* CustomerManager::PickEmptySeat() {
-    std::vector<Seat*> empty;
+    // 한 팀이 테이블 하나를 쓴다: 아무도 없는 테이블을 랜덤으로 고르고, 그 테이블의 의자 중 하나를 랜덤으로 고른다
+    auto tableEmpty = [&](int number) {
+        return std::all_of(seats.begin(), seats.end(), [&](const Seat& s) { return s.number != number || s.IsEmpty(); });
+    };
+    std::vector<Seat*> candidates;
     for (Seat& seat : seats) {
-        if (seat.IsEmpty()) empty.push_back(&seat);
+        if (tableEmpty(seat.number)) candidates.push_back(&seat);
     }
-    if (empty.empty()) return nullptr;
-    return empty[std::uniform_int_distribution<size_t>(0, empty.size() - 1)(random)];
+    if (candidates.empty()) return nullptr;
+    return candidates[std::uniform_int_distribution<size_t>(0, candidates.size() - 1)(random)];
+}
+
+int CustomerManager::StartEatingAll() {
+    int count = 0;
+    for (const auto& customer : customers)
+        if (customer->state == CustomerState::Waiting && customer->StartEating()) ++count;
+    return count;
 }
 
 void CustomerManager::Render(ShaderManager& shaders) const {

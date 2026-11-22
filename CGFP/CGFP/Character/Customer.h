@@ -21,7 +21,7 @@ enum class CustomerState {
 };
 
 // 손님 모델 한 종류. Mixamo에서 리깅·애니메이션한 glTF (tools/mixamo_to_gltf.py로 만든다).
-// 클립 이름: Idle(서 있기), Walk(제자리 걷기), StandToSit(앉기), SitIdle(앉아 있기)
+// 클립 이름: Idle(서 있기), Walk(제자리 걷기), StandToSit(앉기), SitIdle(앉아 있기), SitEat(앉아서 먹기)
 struct CustomerModelDesc {
     std::string gltfPath;
     float height = 1.2f; // 월드 단위 키
@@ -42,8 +42,12 @@ public:
     glm::vec3 sitContact{ 0.0f }; // 좌석에 닿는 면의 가운데 - Hips (SitIdle 첫 프레임, y는 0). 좌석 중심에 맞춘다
     int hipsNode = -1;
     bool hasSitHips = false;
-    int kneeNodes[2] = { -1, -1 }; // LeftLeg, RightLeg
-    float sitKneeAngle = 0.0f;     // 앉아 있을 때 무릎을 더 펴는 각도(도). 종아리가 통 옆면을 뚫지 않게 FitSeat이 정한다
+    int kneeNodes[2] = { -1, -1 };  // LeftLeg, RightLeg
+    int thighNodes[2] = { -1, -1 }; // LeftUpLeg, RightUpLeg
+    float sitKneeAngle = 0.0f;      // 앉아 있을 때 무릎을 더 펴는 각도(도). 종아리가 통 옆면을 뚫지 않게 FitSeat이 정한다
+    // 앉아 있을 때 허벅지에 더하는 회전. SitIdle에서 허벅지가 아래로 기운 모델(FishH)은
+    // 무릎 쪽이 좌석 면 기준이 되어 몸이 통 속으로 내려가므로 허벅지를 거의 수평으로 든다 (Load가 정한다)
+    glm::quat sitThigh[2] = { glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f) };
 
     // 좌석 크기(월드)에 맞춰 sitKneeAngle을 정한다. 앉은 자세 메시를 무릎 각도별로 스키닝해 보고
     // 좌석 면보다 아래로 내려간 종아리·발이 좌석 원기둥 밖으로 나오는 가장 작은 각도를 고른다.
@@ -51,6 +55,9 @@ public:
 
 private:
     bool MeasureSitContact(const std::vector<glm::mat4>& globals, float modelHeight);
+    void LevelThighs(const SkinnedModel::Clip& sit);
+    // SitIdle 첫 프레임 자세 + 허벅지 보정 + 무릎 펴기(도)
+    void SampleSitPose(const SkinnedModel::Clip& sit, float kneeAngle, std::vector<NodePose>& pose) const;
 };
 
 // 손님 NPC. 애니메이션은 Animator가 클립을 재생하고, 여기서는 상태에 맞는 클립만 고른다.
@@ -74,6 +81,8 @@ public:
     // 좌석에 앉는다. seatHeight = 바닥에서 앉는 면까지 높이(월드)
     // 엉덩이·허벅지가 좌석 면 가운데에 닿도록 몸을 옮긴다
     void SitDown(const glm::vec3& seatPosition, float yawDegrees, float seatHeight);
+    // 앉아 있는 손님이 밥을 먹기 시작한다 (Eating 상태, SitEat 클립 반복). 앉아 있지 않으면 false
+    bool StartEating();
 
     float GetDepth() const { return model.depth; }
     float GetWidth() const { return model.width; }

@@ -221,6 +221,11 @@ bool Model::LoadObj(const std::string& path) {
             part.opacity = glm::clamp(material->second.opacity, 0.0f, 1.0f);
             if (!material->second.texturePath.empty()) {
                 part.texture = ResourceManager::Get().GetTexture(material->second.texturePath);
+                // 내보내기 프로그램이 넣은 기본 회색 Kd(0.3736, 0.3686, 0.3838)가 텍스처에 곱해지면
+                // 원래 어두운 텍스처(튀김기·선반 등)가 거의 까맣게 된다. 이 값이면 텍스처 색을 그대로 쓴다.
+                const glm::vec3 exporterGray(0.373615f, 0.368591f, 0.383775f);
+                if (glm::all(glm::lessThan(glm::abs(part.color - exporterGray), glm::vec3(1e-4f))))
+                    part.color = glm::vec3(1.0f);
             }
         }
         part.transparent = part.opacity < 0.999f;

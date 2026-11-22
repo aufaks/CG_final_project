@@ -13,8 +13,10 @@ const char* kIdleClip = "Idle";
 const char* kWalkClip = "Walk";
 const char* kStandToSitClip = "StandToSit";
 const char* kSitIdleClip = "SitIdle";
+const char* kSitEatClip = "SitEat"; // 앉아서 떠먹기 반복 (tools/mixamo_to_gltf.py의 add_eat_clip이 SitIdle로 만든다)
 
 constexpr float kClipFade = 0.25f;
+constexpr float kEatFade = 0.5f; // 앉아 있기 ↔ 먹기 전환
 // Mixamo Walk(제자리)를 1배속으로 틀 때 키 1 단위 모델이 실제로 나아가야 하는 속도. 발 미끄러짐을 맞추는 값.
 constexpr float kWalkSpeedPerHeight = 0.8f;
 constexpr float kSitClearance = -0.05f; // 엉덩이·허벅지 아랫면과 좌석 면 사이 간격 (월드). +면 뜨고 -면 파묻힌다
@@ -24,6 +26,10 @@ constexpr float kKneeStep = 5.0f;
 constexpr float kKneeMax = 100.0f;
 constexpr float kKneeSinkTolerance = 0.07f; // 좌석 면보다 이만큼(월드) 아래까지는 좌석 위에 얹힌 것으로 본다 (kSitClearance로 파묻힌 만큼 포함)
 constexpr float kKneeAllowedRatio = 0.01f;  // 좌석 안에 남아도 되는 종아리·발 정점 비율
+// 허벅지 들기: 앉은 자세에서 무릎이 엉덩이보다 이 각도(도) 넘게 아래면 이 이하가 될 때까지 허벅지를 든다
+constexpr float kThighMaxSlope = 10.0f;
+constexpr float kThighStep = 2.5f;
+constexpr float kThighMax = 60.0f;
 constexpr float kSitBottomPercentile = 0.02f; // 아랫면 높이: 엉덩이·허벅지 정점 중 아래에서 이 비율 (튀어나온 정점 몇 개는 무시)
 constexpr float kSitContactBand = 0.06f;      // 아랫면에서 이 높이(키 대비)까지를 좌석에 닿는 면으로 본다
 constexpr float kArriveDistance = 0.03f;
@@ -49,21 +55,61 @@ bool CustomerModel::Load(const CustomerModelDesc& desc) {
     depth = size.z * scale;
     walkSpeed = kWalkSpeedPerHeight * desc.height;
 
-    // 앉은 자세의 엉덩이 위치와 좌석에 닿는 면
+    kneeNodes[0] = skinned.FindNode("LeftLeg");
+    kneeNodes[1] = skinned.FindNode("RightLeg");
+    thighNodes[0] = skinned.FindNode("LeftUpLeg");
+    thighNodes[1] = skinned.FindNode("RightUpLeg");
+
+    // 앉은 자세의 엉덩이 위치와 좌석에 닿는 면 (허벅지 보정을 먼저 정한 뒤 잰다)
     hasSitHips = false;
     const int hips = skinned.FindNode("Hips");
     if (const SkinnedModel::Clip* sit = skinned.FindClip(kSitIdleClip); sit && hips >= 0) {
-        std::vector<NodePose> pose = skinned.GetRestPose();
-        skinned.SampleClip(*sit, 0.0f, pose);
+        LevelThighs(*sit);
+        std::vector<NodePose> pose;
+        SampleSitPose(*sit, 0.0f, pose);
         std::vector<glm::mat4> globals;
         skinned.ComputeGlobalMatrices(pose, globals);
         sitHips = glm::vec3(globals[hips][3]);
         hipsNode = hips;
         hasSitHips = MeasureSitContact(globals, size.y);
     }
-    kneeNodes[0] = skinned.FindNode("LeftLeg");
-    kneeNodes[1] = skinned.FindNode("RightLeg");
     return true;
+}
+
+void CustomerModel::SampleSitPose(const SkinnedModel::Clip& sit, float kneeAngle, std::vector<NodePose>& pose) const {
+    pose = skinned.GetRestPose();
+    skinned.SampleClip(sit, 0.0f, pose);
+    const glm::quat extend = glm::angleAxis(glm::radians(kneeAngle), glm::vec3(1.0f, 0.0f, 0.0f));
+    for (int i = 0; i < 2; ++i) {
+        if (thighNodes[i] >= 0) pose[thighNodes[i]].rotation = pose[thighNodes[i]].rotation * sitThigh[i];
+        if (kneeNodes[i] >= 0) pose[kneeNodes[i]].rotation = pose[kneeNodes[i]].rotation * extend;
+    }
+}
+
+void CustomerModel::LevelThighs(const SkinnedModel::Clip& sit) {
+    std::vector<NodePose> pose;
+    std::vector<glm::mat4> globals;
+    for (int i = 0; i < 2; ++i) {
+        sitThigh[i] = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+        const int thigh = thighNodes[i], knee = kneeNodes[i];
+        if (thigh < 0 || knee < 0) continue;
+        // 허벅지 기울기(도): 엉덩이 관절에서 무릎 관절이 수평보다 얼마나 아래에 있나. + = 무릎이 아래
+        auto slopeAt = [&](float degrees) {
+            pose = skinned.GetRestPose();
+            skinned.SampleClip(sit, 0.0f, pose);
+            pose[thigh].rotation = pose[thigh].rotation * glm::angleAxis(glm::radians(degrees), glm::vec3(1.0f, 0.0f, 0.0f));
+            skinned.ComputeGlobalMatrices(pose, globals);
+            const glm::vec3 h(globals[thigh][3]), k(globals[knee][3]);
+            return glm::degrees(std::atan2(h.y - k.y, glm::length(glm::vec2(k.x - h.x, k.z - h.z))));
+        };
+        const float start = slopeAt(0.0f);
+        if (start <= kThighMaxSlope) continue;
+        const float sign = slopeAt(kThighStep) < start ? 1.0f : -1.0f; // 무릎이 올라가는 쪽
+        for (float angle = kThighStep; angle <= kThighMax; angle += kThighStep) {
+            sitThigh[i] = glm::angleAxis(glm::radians(sign * angle), glm::vec3(1.0f, 0.0f, 0.0f));
+            if (slopeAt(sign * angle) <= kThighMaxSlope) break;
+        }
+    }
 }
 
 void CustomerModel::FitSeat(float seatHeight, float seatRadius) {
@@ -100,10 +146,7 @@ void CustomerModel::FitSeat(float seatHeight, float seatRadius) {
     std::vector<glm::mat4> globals, bones;
     std::vector<glm::vec3> posed;
     for (float angle = 0.0f; angle <= kKneeMax; angle += kKneeStep) {
-        pose = skinned.GetRestPose();
-        skinned.SampleClip(*sit, 0.0f, pose);
-        const glm::quat extend = glm::angleAxis(glm::radians(angle), glm::vec3(1.0f, 0.0f, 0.0f));
-        for (int knee : kneeNodes) pose[knee].rotation = pose[knee].rotation * extend;
+        SampleSitPose(*sit, angle, pose);
         skinned.ComputeGlobalMatrices(pose, globals);
         skinned.ComputeBoneMatrices(globals, bones);
         skinned.SkinPositions(bones, posed);
@@ -192,6 +235,13 @@ void Customer::SitDown(const glm::vec3& seatPosition, float yawDegrees, float he
     if (!animator.Play(kStandToSitClip, false, kClipFade)) animator.Play(kSitIdleClip, true, kClipFade);
 }
 
+bool Customer::StartEating() {
+    if (anim != Anim::Sit || state == CustomerState::Eating) return false;
+    state = CustomerState::Eating;
+    stateTime = 0.0f;
+    return true;
+}
+
 void Customer::Update(float deltaTime) {
     stateTime += deltaTime;
     const glm::vec3 before = transform.position;
@@ -230,17 +280,25 @@ void Customer::UpdateMovement(float deltaTime) {
 void Customer::UpdateAnimation(float deltaTime, bool moving) {
     if (anim == Anim::Sit) {
         // 앉기 클립이 끝나면 앉아 있기 반복. 그동안 엉덩이를 좌석 위로 서서히 옮긴다.
+        // 다 앉은 뒤에는 식사 중이면 먹기, 아니면 앉아 있기를 반복한다
         animator.speed = 1.0f;
         if (animator.GetClipName() == kStandToSitClip) {
             sitBlend = animator.GetProgress();
             if (animator.IsFinished()) animator.Play(kSitIdleClip, true, kClipFade);
         } else {
             sitBlend = 1.0f;
+            const bool eating = state == CustomerState::Eating && model.skinned.FindClip(kSitEatClip);
+            animator.Play(eating ? kSitEatClip : kSitIdleClip, true, kEatFade);
         }
         // 종아리가 통 옆면을 뚫지 않게 앉는 동안 무릎을 편다
         const glm::quat extend = glm::angleAxis(glm::radians(model.sitKneeAngle * sitBlend), glm::vec3(1.0f, 0.0f, 0.0f));
         for (int knee : model.kneeNodes)
             if (knee >= 0) animator.SetExtraRotation(knee, extend);
+        // 아래로 기운 허벅지를 든다 (LevelThighs)
+        for (int i = 0; i < 2; ++i)
+            if (model.thighNodes[i] >= 0)
+                animator.SetExtraRotation(model.thighNodes[i],
+                                          glm::slerp(glm::quat(1.0f, 0.0f, 0.0f, 0.0f), model.sitThigh[i], sitBlend));
     } else {
         animator.ClearExtraRotations();
         anim = moving ? Anim::Walk : Anim::Idle;

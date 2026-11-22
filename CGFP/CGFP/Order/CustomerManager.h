@@ -32,6 +32,8 @@ public:
 
     void Update(float deltaTime);
     void Render(ShaderManager& shaders) const;
+    // 앉아서 기다리는 손님을 모두 밥 먹게 한다. 음식 서빙이 생기기 전 테스트용 (PlayScene F 키)
+    int StartEatingAll();
 
     int GetTeamCount() const { return static_cast<int>(customers.size()); }
     const std::vector<Seat>& GetSeats() const { return seats; }

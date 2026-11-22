@@ -30,7 +30,10 @@ public:
 
     enum class State { Idle, Walk }; // 기본 Idle, 움직이는 동안 Walk
 
-    bool IsFirstPerson() const { return firstPerson; }
+    // 시점: V 키로 1인칭 → 3인칭 후방 → 3인칭 전방 → 1인칭 순서로 바뀐다
+    enum class View { FirstPerson, ThirdBack, ThirdFront };
+    bool IsFirstPerson() const { return view == View::FirstPerson; }
+    View GetView() const { return view; }
     State GetState() const { return state; }
 
     Camera camera;
@@ -64,5 +67,5 @@ private:
     float eyeHeight = 1.3f;
     float eyeForward = 0.0f; // 발 중심에서 얼굴 앞까지 수평 거리
     float firstPersonNear = 0.12f;
-    bool firstPerson = true;
+    View view = View::FirstPerson;
 };
