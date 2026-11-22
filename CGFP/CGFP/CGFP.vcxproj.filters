@@ -90,6 +90,12 @@
     <ClCompile Include="Character\Squidward.cpp">
       <Filter>카메라·캐릭터</Filter>
     </ClCompile>
+    <ClCompile Include="Character\Animator.cpp">
+      <Filter>카메라·캐릭터</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\SkinnedModel.cpp">
+      <Filter>렌더링</Filter>
+    </ClCompile>
     <ClCompile Include="Character\Customer.cpp">
       <Filter>카메라·캐릭터</Filter>
     </ClCompile>
@@ -154,6 +160,15 @@
     </ClInclude>
     <ClInclude Include="Character\Camera.h">
       <Filter>카메라·캐릭터</Filter>
+    </ClInclude>
+    <ClInclude Include="Character\Animator.h">
+      <Filter>카메라·캐릭터</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\SkinnedModel.h">
+      <Filter>렌더링</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\cgltf.h">
+      <Filter>렌더링</Filter>
     </ClInclude>
     <ClInclude Include="Character\Customer.h">
       <Filter>카메라·캐릭터</Filter>

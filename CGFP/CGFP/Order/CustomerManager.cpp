@@ -8,60 +8,15 @@
 #include <iostream>
 
 namespace {
-// 손님 물고기 모델들. 비율 값은 OBJ를 키 대비로 재서 정했다 (다리·팔 높이, 몸통 폭).
-// Fish_G·Fish_H는 T포즈 손 바깥에 세로 판 조각이 붙어 있어서 dropOutsideX로 잘라 낸다.
-// Morty는 정면이 -Z라서 읽을 때 돌린다.
+// 손님 물고기 모델들. Mixamo에서 자동 리깅·애니메이션하고 tools/mixamo_to_gltf.py로 합친 glTF.
+// 만드는 방법은 obj/mixamo/README.md 참고. 파일이 없는 모델은 건너뛴다.
 std::vector<CustomerModelDesc> MakeModelDescs() {
-    std::vector<CustomerModelDesc> descs;
-
-    CustomerModelDesc fishG;
-    fishG.objPath = "obj/imported/sbfbbr-fish-g/Fish_G.obj";
-    fishG.texturePath = "obj/imported/sbfbbr-fish-g/T_Fish_G_D.png";
-    fishG.height = 1.45f;
-    fishG.hipRatio = 0.22f;
-    fishG.kneeRatio = 0.11f;
-    fishG.armLowRatio = 0.445f;
-    fishG.armHighRatio = 0.53f;
-    fishG.shoulderX = 0.115f;
-    fishG.dropOutsideX = 0.31f;
-    descs.push_back(fishG);
-
-    CustomerModelDesc fishH;
-    fishH.objPath = "obj/imported/sbfbbr-fish-h/Fish_H.obj";
-    fishH.texturePath = "obj/imported/sbfbbr-fish-h/T_Fish_H_D.png";
-    fishH.height = 1.15f;
-    fishH.hipRatio = 0.21f;
-    fishH.kneeRatio = 0.08f;
-    fishH.armLowRatio = 0.53f;
-    fishH.armHighRatio = 0.65f;
-    fishH.shoulderX = 0.14f;
-    fishH.dropOutsideX = 0.38f;
-    descs.push_back(fishH);
-
-    CustomerModelDesc fred;
-    fred.objPath = "obj/viewer_models/Fred.obj";
-    fred.texturePath = "obj/viewer_models/fish.png";
-    fred.height = 1.3f;
-    fred.hipRatio = 0.21f;
-    fred.kneeRatio = 0.10f;
-    fred.armLowRatio = 0.63f;
-    fred.armHighRatio = 0.71f;
-    fred.shoulderX = 0.11f;
-    descs.push_back(fred);
-
-    CustomerModelDesc morty;
-    morty.objPath = "obj/viewer_models/Morty.obj";
-    morty.texturePath = "obj/viewer_models/Meshesmorty1_diff.png";
-    morty.height = 1.0f;
-    morty.facesNegativeZ = true;
-    morty.hipRatio = 0.18f;
-    morty.kneeRatio = 0.08f;
-    morty.armLowRatio = 0.50f;
-    morty.armHighRatio = 0.58f;
-    morty.shoulderX = 0.18f;
-    descs.push_back(morty);
-
-    return descs;
+    return {
+        { "obj/mixamo/anim/FishG.gltf", 1.45f },
+        { "obj/mixamo/anim/FishH.gltf", 1.15f },
+        { "obj/mixamo/anim/Fred.gltf", 1.3f },
+        { "obj/mixamo/anim/Morty.gltf", 1.0f },
+    };
 }
 
 float YawOf(const glm::vec3& direction) {
@@ -79,7 +34,7 @@ bool CustomerManager::LoadModels() {
         if (model->Load(desc)) {
             models.push_back(std::move(model));
         } else {
-            std::cerr << "[CustomerManager] 손님 모델을 불러오지 못했습니다: " << desc.objPath << "\n";
+            std::cerr << "[CustomerManager] 손님 모델을 불러오지 못했습니다: " << desc.gltfPath << "\n";
         }
     }
     return !models.empty();

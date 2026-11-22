@@ -157,6 +157,8 @@
     <ClCompile Include="Character\Player.cpp" />
     <ClCompile Include="Character\Squidward.cpp" />
     <ClCompile Include="Character\Customer.cpp" />
+    <ClCompile Include="Character\Animator.cpp" />
+    <ClCompile Include="Render\SkinnedModel.cpp" />
     <ClCompile Include="Order\CustomerManager.cpp" />
     <ClCompile Include="Object\Collider.cpp" />
     <ClCompile Include="Object\Object.cpp" />
@@ -180,6 +182,9 @@
     <ClInclude Include="Render\Model.h" />
     <ClInclude Include="Character\Camera.h" />
     <ClInclude Include="Character\Customer.h" />
+    <ClInclude Include="Character\Animator.h" />
+    <ClInclude Include="Render\SkinnedModel.h" />
+    <ClInclude Include="ThirdParty\cgltf.h" />
     <ClInclude Include="Character\Player.h" />
     <ClInclude Include="Character\Squidward.h" />
     <ClInclude Include="Object\Collider.h" />

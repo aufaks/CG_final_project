@@ -169,16 +169,24 @@ void PlayScene::Render() {
 
     const Camera& camera = player.camera;
     ShaderManager& shaders = ResourceManager::Get().Shaders();
-    shaders.Use("map");
-    shaders.SetMat4("uProjection", camera.GetProjectionMatrix(static_cast<float>(width) / static_cast<float>(height)));
-    shaders.SetMat4("uView", camera.GetViewMatrix());
-    shaders.SetVec3("uLightDirection", glm::normalize(kLightDirection));
-    shaders.SetBool("uReferenceLighting", true);
-    shaders.SetInt("uTexture", 0);
+    const glm::mat4 projection = camera.GetProjectionMatrix(static_cast<float>(width) / static_cast<float>(height));
+    const glm::mat4 view = camera.GetViewMatrix();
+    auto useShader = [&](const char* name) {
+        shaders.Use(name);
+        shaders.SetMat4("uProjection", projection);
+        shaders.SetMat4("uView", view);
+        shaders.SetVec3("uLightDirection", glm::normalize(kLightDirection));
+        shaders.SetBool("uReferenceLighting", true);
+        shaders.SetInt("uTexture", 0);
+    };
 
+    // 뼈대 애니메이션 캐릭터(손님)는 GPU 스키닝 셰이더로 그린다
+    useShader("skinned");
+    customerManager.Render(shaders);
+
+    useShader("map");
     player.Render(shaders);
     if (squidwardLoaded) squidward.Render(shaders);
-    customerManager.Render(shaders);
     map->Draw(shaders, mapMatrix, camera.position);
 
     DrawOrderTickets(width, height);

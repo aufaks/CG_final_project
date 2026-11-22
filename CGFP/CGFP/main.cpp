@@ -63,6 +63,9 @@ int main() {
     if (!ResourceManager::Get().Shaders().Load("map", "shaders/object_viewer.vert", "shaders/object_viewer.frag")) {
         std::cerr << "맵 셰이더를 불러오지 못했습니다.\n";
     }
+    if (!ResourceManager::Get().Shaders().Load("skinned", "shaders/skinned.vert", "shaders/object_viewer.frag")) {
+        std::cerr << "스키닝 셰이더를 불러오지 못했습니다.\n";
+    }
 
     SceneManager sceneManager;
     sceneManager.ChangeScene(std::make_unique<TitleScene>());

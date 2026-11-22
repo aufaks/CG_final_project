@@ -1,15 +1,13 @@
 #pragma once
+#include "Character/Animator.h"
 #include "Object/Object.h"
-#include "Render/Mesh.h"
+#include "Render/SkinnedModel.h"
 
 #include <deque>
-#include <memory>
-#include <random>
 #include <string>
 #include <vector>
 
 struct Order;
-class Texture;
 
 // 손님 상태: 입장(입구 → 줄 끝) → 줄서기 → 주문 → 자리 이동 → 대기(착석) → 식사 → 퇴장
 enum class CustomerState {
@@ -22,58 +20,38 @@ enum class CustomerState {
     Leaving,
 };
 
-// 손님 모델 한 종류의 설정. 비율은 모두 모델 키 대비 (x는 몸 중심에서의 거리).
+// 손님 모델 한 종류. Mixamo에서 리깅·애니메이션한 glTF (tools/mixamo_to_gltf.py로 만든다).
+// 클립 이름: Idle(서 있기), Walk(제자리 걷기), StandToSit(앉기), SitIdle(앉아 있기)
 struct CustomerModelDesc {
-    std::string objPath;
-    std::string texturePath;
-    float height = 1.2f;      // 월드 단위 키
-    bool facesNegativeZ = false; // 모델 정면이 -Z면 읽을 때 180도 돌려 +Z로 맞춘다
-    float hipRatio = 0.22f;   // 다리 위끝(골반 관절)
-    float kneeRatio = 0.10f;
-    float armLowRatio = 0.45f; // T포즈 팔이 있는 높이 띠
-    float armHighRatio = 0.55f;
-    float shoulderX = 0.10f;  // 이보다 바깥이 팔
-    float dropOutsideX = 0.0f; // 0보다 크면 이보다 바깥 삼각형은 버린다 (손 옆에 떠 있는 판 조각)
+    std::string gltfPath;
+    float height = 1.2f; // 월드 단위 키
 };
 
-// 손님 모델 데이터. 여러 손님이 같은 데이터를 공유하고, 정점 변형(스키닝)만 손님마다 따로 한다.
-// Squidward와 같은 방식: 정점마다 몸통·팔·허벅지·정강이 가중치를 줘서 관절 근처를 부드럽게 섞는다.
+// 손님 모델 데이터. 메시·뼈대·클립은 여러 손님이 공유하고, 자세는 손님마다 Animator가 갖는다.
 class CustomerModel {
 public:
-    enum Bone { Body, RightArm, LeftArm, RightThigh, LeftThigh, RightShin, LeftShin, BoneCount };
-    struct Weights {
-        float w[BoneCount]{};
-    };
-
     bool Load(const CustomerModelDesc& desc);
 
-    std::vector<MeshVertex> restVertices; // 발 중심이 원점, 정면 +Z인 T포즈 (OBJ 단위)
-    std::vector<uint32_t> indices;
-    std::vector<Weights> weights;
-    Texture* texture = nullptr;
-
-    glm::vec3 pelvis{ 0.0f };
-    glm::vec3 shoulders[2]{}; // [0] = 오른쪽(-X), [1] = 왼쪽(+X)
-    glm::vec3 hips[2]{};
-    glm::vec3 knees[2]{};
-    float modelHeight = 1.0f; // OBJ 단위
-    float scale = 1.0f;       // OBJ → 월드
-    float hipHeight = 0.0f;   // 월드 단위 골반 높이
-    float width = 0.0f;       // 월드 단위 몸 가로 폭 (팔 제외)
+    SkinnedModel skinned;
+    float scale = 1.0f;       // glTF → 월드
+    float width = 0.0f;       // 월드 단위 가로 폭 (T포즈 바운딩 박스 기준이라 팔 포함)
     float depth = 0.0f;       // 월드 단위 앞뒤 두께. 줄 설 때 간격 계산에 쓴다
+    float walkSpeed = 1.0f;   // Walk 클립을 1배속으로 재생할 때 발이 미끄러지지 않는 이동 속도(월드/초)
+    glm::vec3 sitHips{ 0.0f }; // SitIdle 첫 프레임의 Hips 위치 (glTF 모델 공간). 좌석 중심에 맞춘다
+    float sitBottomY = 0.0f;   // SitIdle 첫 프레임에서 엉덩이 아래 메시(엉덩이·치마 끝)의 가장 낮은 높이. 좌석 면에 맞춘다
+    bool hasSitHips = false;
 };
 
-// 손님 NPC. 걷기(Walk)·서 있기(Idle)·앉아 있기(Sit) 애니메이션을 직접 계산한다.
+// 손님 NPC. 애니메이션은 Animator가 클립을 재생하고, 여기서는 상태에 맞는 클립만 고른다.
 // transform.position은 발 위치, 정면은 rotation.y 방향 (yaw 0 = +Z).
 class Customer : public Object {
 public:
     enum class Anim { Idle, Walk, Sit };
 
     explicit Customer(const CustomerModel& model);
-    ~Customer() override;
 
     void Update(float deltaTime) override;
-    void Render(ShaderManager& shaders) const override;
+    void Render(ShaderManager& shaders) const override; // "skinned" 셰이더가 Use된 상태에서 부른다
 
     // 이동: 경유점을 차례로 걸어간다. MoveTo는 경로를 목표 한 점으로 바꾼다.
     void SetPath(const std::vector<glm::vec3>& points);
@@ -101,23 +79,16 @@ public:
 private:
     void UpdateMovement(float deltaTime);
     void UpdateAnimation(float deltaTime, bool moving);
-    void ComputeBoneMatrices(glm::mat4 (&out)[CustomerModel::BoneCount]) const;
-    void Skin();
+    glm::vec3 GetSitOffset() const; // 앉는 동안 엉덩이가 좌석 위에 오도록 몸을 옮기는 양(월드)
 
     const CustomerModel& model;
-    std::unique_ptr<Mesh> skinnedMesh;
-    std::vector<MeshVertex> posed;
-    glm::mat4 modelOffset{ 1.0f };
+    Animator animator;
 
     std::deque<glm::vec3> path;
     glm::vec3 destination{ 0.0f };
     float targetYaw = 0.0f;
 
     Anim anim = Anim::Idle;
-    float walkPhase = 0.0f;
-    float walkBlend = 0.0f;
-    float sitBlend = 0.0f;
     float seatHeight = 0.0f;
-    float animTime = 0.0f;
-    float idleSeed = 0.0f; // 손님마다 흔들림 박자를 다르게
+    float sitBlend = 0.0f; // 0 = 선 자리, 1 = 좌석에 맞춘 자리
 };
