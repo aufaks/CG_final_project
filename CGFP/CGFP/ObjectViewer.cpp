@@ -1008,7 +1008,9 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
             }
             texturePath = fallbackTexture;
         }
-        result.partColors.push_back(material.color);
+        const bool isInteriorFryer = path.filename() == "Krusty_Krab_Interior.obj" &&
+            part.materialName == "Frier1Mtl" && !texturePath.empty();
+        result.partColors.push_back(isInteriorFryer ? glm::vec3(1.0f) : material.color);
         result.partOpacities.push_back(std::clamp(material.opacity, 0.0f, 1.0f));
         result.partTransparencyFlags.push_back(material.opacity < 0.999f ? 1 : 0);
         result.partTextureKeys.push_back(texturePath.empty() ? std::string() : TextureCacheKey(texturePath));

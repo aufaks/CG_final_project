@@ -1,0 +1,13 @@
+newmtl TraySurface
+Ka 0.18 0.025 0.02
+Kd 0.72 0.075 0.055
+Ks 0.28 0.28 0.28
+Ns 48
+d 1
+
+newmtl TrayRim
+Ka 0.10 0.012 0.01
+Kd 0.46 0.035 0.025
+Ks 0.22 0.22 0.22
+Ns 40
+d 1

@@ -237,6 +237,8 @@ bool Model::LoadObj(const std::string& path) {
                 part.texture = ResourceManager::Get().GetTexture(material->second.texturePath);
             }
         }
+        // 튀김기 텍스처 자체가 어두운 회색이므로 MTL의 낮은 Kd를 다시 곱하지 않는다.
+        if (name == "Frier1Mtl" && part.texture) part.color = glm::vec3(1.0f);
         part.transparent = part.opacity < 0.999f;
         part.cullBackFaces = name == "Kktable1Mtl"; // 테이블 윗면이 겹쳐 깜빡이는 것을 막는다 (ObjectViewer와 같음)
         parts.push_back(std::move(part));
