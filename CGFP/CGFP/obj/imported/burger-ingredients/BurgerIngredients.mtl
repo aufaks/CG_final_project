@@ -1,0 +1,83 @@
+newmtl BunGolden
+Ka 0.22 0.09 0.025
+Kd 0.92 0.52 0.16
+Ks 0.18 0.18 0.18
+Ns 24
+d 1
+
+newmtl PattyCooked
+Ka 0.10 0.035 0.018
+Kd 0.36 0.12 0.055
+Ks 0.08 0.08 0.08
+Ns 8
+d 1
+
+newmtl PattyRaw
+Ka 0.16 0.045 0.035
+Kd 0.62 0.18 0.14
+Ks 0.08 0.08 0.08
+Ns 8
+d 1
+
+newmtl PattyBurnt
+Ka 0.018 0.014 0.010
+Kd 0.055 0.045 0.035
+Ks 0.03 0.03 0.03
+Ns 4
+d 1
+
+newmtl LettuceGreen
+Ka 0.04 0.16 0.025
+Kd 0.24 0.78 0.12
+Ks 0.08 0.08 0.08
+Ns 10
+d 1
+
+newmtl CheeseYellow
+Ka 0.22 0.14 0.015
+Kd 1.00 0.72 0.08
+Ks 0.12 0.12 0.12
+Ns 14
+d 1
+
+newmtl PickleGreen
+Ka 0.04 0.10 0.015
+Kd 0.30 0.58 0.08
+Ks 0.12 0.12 0.12
+Ns 18
+d 1
+
+newmtl TomatoRed
+Ka 0.18 0.025 0.018
+Kd 0.88 0.12 0.07
+Ks 0.10 0.10 0.10
+Ns 14
+d 1
+
+newmtl OnionPurple
+Ka 0.14 0.07 0.15
+Kd 0.78 0.50 0.82
+Ks 0.16 0.16 0.16
+Ns 20
+d 1
+
+newmtl KetchupRed
+Ka 0.18 0.015 0.008
+Kd 0.88 0.035 0.018
+Ks 0.30 0.30 0.30
+Ns 48
+d 1
+
+newmtl MustardYellow
+Ka 0.20 0.12 0.005
+Kd 0.95 0.58 0.015
+Ks 0.24 0.24 0.24
+Ns 40
+d 1
+
+newmtl PumpDark
+Ka 0.012 0.012 0.012
+Kd 0.055 0.055 0.050
+Ks 0.22 0.22 0.22
+Ns 34
+d 1

@@ -1,4 +1,4 @@
-// Windows.h goes first so glfw3.h does not redefine APIENTRY (warning C4005).
+// glfw3.h가 APIENTRY를 다시 정의하지 않도록 Windows.h를 먼저 포함한다(경고 C4005).
 #define NOMINMAX
 #include <Windows.h>
 #include <wincodec.h>
@@ -56,17 +56,17 @@ struct Vertex {
 static_assert(sizeof(Vertex) == 32, "Vertex must be tightly packed (it is hashed and cached as raw bytes)");
 
 // ---------------------------------------------------------------------------------------------
-// Data passed between the loader thread and the main thread
+// 로더 스레드와 메인 스레드 사이에 전달하는 데이터
 // ---------------------------------------------------------------------------------------------
 
-// One material's geometry, indexed: identical vertices are stored once.
+// 재질 하나의 메시 데이터. 동일한 정점은 한 번만 저장하고 인덱스로 참조한다.
 struct CpuPart {
     std::string materialName;
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 };
 
-// Everything parsed from an OBJ. This is exactly what the on-disk cache stores.
+// OBJ에서 읽은 전체 데이터. 디스크 캐시에도 같은 내용을 저장한다.
 struct CpuMesh {
     std::vector<std::string> materialLibraries;
     std::vector<CpuPart> parts;
@@ -79,7 +79,7 @@ struct CpuMesh {
 struct DecodedImage {
     UINT width = 0;
     UINT height = 0;
-    std::vector<BYTE> pixels; // RGBA8, bottom row first (OpenGL order)
+    std::vector<BYTE> pixels; // RGBA8, 맨 아래 행부터 저장(OpenGL 순서)
     std::string error;
 };
 
@@ -88,7 +88,7 @@ struct DecodedTexture {
     DecodedImage image;
 };
 
-// OpenGL objects that can be shared between contexts (buffers and textures, not VAOs).
+// 컨텍스트 사이에 공유할 수 있는 OpenGL 객체(버퍼와 텍스처, VAO는 제외).
 struct GpuPart {
     bool cullBackFaces = false;
     GLuint vbo = 0;
@@ -110,18 +110,18 @@ struct LoadResult {
     double milliseconds = 0.0;
     size_t indexCount = 0;
     size_t uniqueVertexCount = 0;
-    CpuMesh mesh;                            // geometry until uploaded
-    std::vector<glm::vec3> partColors;        // parallel to mesh.parts
-    std::vector<float> partOpacities;          // parallel to mesh.parts
-    std::vector<uint8_t> partTransparencyFlags; // parallel to mesh.parts
-    std::vector<std::string> partTextureKeys; // parallel to mesh.parts ("" = no texture)
-    std::vector<DecodedTexture> newTextures; // decoded, not uploaded yet
+    CpuMesh mesh;                            // GPU에 올리기 전까지 보관하는 메시 데이터
+    std::vector<glm::vec3> partColors;        // mesh.parts와 같은 순서
+    std::vector<float> partOpacities;         // mesh.parts와 같은 순서
+    std::vector<uint8_t> partTransparencyFlags; // mesh.parts와 같은 순서
+    std::vector<std::string> partTextureKeys; // mesh.parts와 같은 순서(빈 문자열은 텍스처 없음)
+    std::vector<DecodedTexture> newTextures; // 디코딩했지만 아직 GPU에 올리지 않은 텍스처
     bool uploaded = false;
     std::vector<GpuPart> gpuParts;
 };
 
 // ---------------------------------------------------------------------------------------------
-// Main-thread state
+// 메인 스레드 상태
 // ---------------------------------------------------------------------------------------------
 
 struct MeshPart {
@@ -146,7 +146,7 @@ struct Model {
     glm::vec3 cameraStartPosition{ 0.0f, 0.0f, 4.0f };
     float cameraPitch = 0.0f;
     bool loaded = false;
-    bool requested = false; // handed to the loader thread
+    bool requested = false; // 로더 스레드에 요청을 전달했는지 여부
 };
 
 struct Camera {
@@ -186,20 +186,19 @@ bool gCursorCaptured = true;
 double gLastMouseX = kWindowWidth * 0.5;
 double gLastMouseY = kWindowHeight * 0.5;
 std::vector<Model> gModels;
-int gTargetModelId = -1; // the model the user asked for (may still be loading)
-int gShownModelId = -1;  // the model being drawn (stays visible while the target loads)
+int gTargetModelId = -1; // 사용자가 선택한 모델(아직 로딩 중일 수 있음)
+int gShownModelId = -1;  // 현재 그리는 모델(선택 모델을 로딩하는 동안에도 표시)
 int gTargetDirection = 1;
 int gWindowWidth = kWindowWidth;
 int gWindowHeight = kWindowHeight;
 Microsoft::WRL::ComPtr<IWICImagingFactory> gWicFactory;
-// Texture objects by path. Owned by whichever thread uploads (the loader thread when the shared
-// upload context exists, otherwise the main thread); read by the main thread only after the
-// loader thread has stopped.
+// 경로별 텍스처 객체. 공유 업로드 컨텍스트가 있으면 로더 스레드가, 없으면 메인 스레드가 생성한다.
+// 메인 스레드는 로더 스레드가 멈춘 뒤에만 이 목록을 읽는다.
 std::unordered_map<std::string, GLuint> gTextureCache;
 std::atomic<bool> gQuit{ false };
 
 // ---------------------------------------------------------------------------------------------
-// Shaders
+// 셰이더
 // ---------------------------------------------------------------------------------------------
 
 std::string ReadTextFile(const fs::path& path) {
@@ -268,7 +267,7 @@ Uniforms FindUniforms(GLuint program) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Fast OBJ text helpers (operate on [begin, end) pointer ranges, no allocation)
+// 빠른 OBJ 텍스트 처리 함수([begin, end) 포인터 범위에서 할당 없이 동작)
 // ---------------------------------------------------------------------------------------------
 
 inline bool IsBlank(char c) {
@@ -285,7 +284,7 @@ inline const char* SkipToken(const char* p, const char* end) {
     return p;
 }
 
-// Reads one float like `stream >> value` would: skips blanks, accepts a leading '+'.
+// stream 입력처럼 공백을 건너뛰고 앞의 '+'도 허용하며 실수 하나를 읽는다.
 bool ParseFloat(const char*& p, const char* end, float& value) {
     p = SkipBlanks(p, end);
     const char* start = p;
@@ -308,7 +307,7 @@ std::string LineError(const fs::path& path, int lineNumber, const char* message)
     return path.string() + ":" + std::to_string(lineNumber) + " " + message;
 }
 
-// Converts an OBJ index token (1-based, or negative = relative to the end) into a 0-based index.
+// OBJ 인덱스(1부터 시작하거나 끝에서부터 세는 음수)를 0부터 시작하는 인덱스로 바꾼다.
 int ParseIndex(const char* begin, const char* end, size_t count, const fs::path& path, int lineNumber) {
     if (begin == end) return -1;
     if (*begin == '+') ++begin;
@@ -341,7 +340,7 @@ bool ReadWholeFile(const fs::path& path, std::string& contents) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Materials
+// 재질
 // ---------------------------------------------------------------------------------------------
 
 struct Material {
@@ -367,9 +366,8 @@ void ReadMaterialLibrary(const fs::path& path, MaterialMap& materials) {
             std::getline(stream, name);
             const std::string materialName = Trim(name);
             current = &materials[materialName];
-            // The source MTL marks several opaque wall overlays with low d values.
-            // Only the glass material should use blended rendering; blending whole
-            // wall sections makes the interior look as if it has holes.
+            // 원본 MTL은 불투명한 벽 덧씌우기 재질에도 낮은 d 값을 지정한다.
+            // 벽 전체를 반투명으로 그리면 구멍처럼 보이므로 유리 재질만 혼합해서 그린다.
             current->supportsTransparency = materialName.find("Glass") != std::string::npos ||
                 materialName.find("glass") != std::string::npos;
         }
@@ -387,23 +385,22 @@ void ReadMaterialLibrary(const fs::path& path, MaterialMap& materials) {
             if (current->supportsTransparency) current->opacity = 1.0f - transparency;
         }
         else if (current && tag == "map_d" && current->supportsTransparency) {
-            // Glass1_diff has a uniform semi-transparent alpha channel. Keep this
-            // one material in the blended pass without making ordinary map_d
-            // textures turn walls, floors, and props into transparent surfaces.
+            // Glass1_diff의 알파 채널은 전체가 반투명하다. 이 재질만 혼합 단계에서 그리고,
+            // 일반 map_d 텍스처 때문에 벽·바닥·소품이 투명해지지 않게 한다.
             current->opacity = std::min(current->opacity, 0.65f);
         }
         else if (current && (tag == "map_Kd" || tag == "map_kd")) {
             std::string filename;
             std::getline(stream, filename);
             filename = Trim(filename);
-            // The supplied OBJ assets use plain map_Kd paths (without map options).
+            // 제공된 OBJ 재질은 별도 옵션 없이 map_Kd 경로를 지정한다.
             current->diffuseTexture = path.parent_path() / fs::path(filename);
         }
     }
 }
 
-// Finds `mtllib` lines without parsing the rest of the OBJ (same rules as the main parse loop:
-// optional leading blanks, the tag as its own token, the rest of the line trimmed).
+// OBJ 전체를 파싱하지 않고 mtllib 줄만 찾는다. 앞쪽 공백을 허용하고,
+// 태그를 독립된 단어로 확인한 뒤 나머지 내용을 공백 제거해 사용한다.
 std::vector<std::string> FindMaterialLibraries(const std::string& contents) {
     std::vector<std::string> libraries;
     const char* const begin = contents.data();
@@ -433,7 +430,7 @@ MaterialMap LoadMaterials(const fs::path& objPath, const std::vector<std::string
             loadedLibrary = true;
         }
     }
-    // Some supplied model packages rename their MTL after the OBJ was exported.
+    // 일부 모델 묶음은 OBJ를 내보낸 뒤 MTL 파일 이름을 바꾼다.
     if (!loadedLibrary && fs::exists(objPath.parent_path())) {
         for (const auto& entry : fs::directory_iterator(objPath.parent_path())) {
             if (entry.is_regular_file() && entry.path().extension() == ".mtl") ReadMaterialLibrary(entry.path(), materials);
@@ -468,14 +465,14 @@ fs::path FindFallbackTexture(const fs::path& directory) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Textures (decode on any thread, upload on a thread with a current OpenGL context)
+// 텍스처(아무 스레드에서나 디코딩하고, OpenGL 컨텍스트가 있는 스레드에서 GPU에 올린다)
 // ---------------------------------------------------------------------------------------------
 
 std::string TextureCacheKey(const fs::path& path) {
     return path.lexically_normal().string();
 }
 
-// CPU-only PNG/JPEG decode through WIC. Safe to call from worker threads (the WIC factory is free-threaded).
+// WIC로 PNG/JPEG를 CPU에서 디코딩한다. WIC 팩터리는 스레드 간 사용이 가능하다.
 DecodedImage DecodeImage(const fs::path& path) {
     DecodedImage image;
     Microsoft::WRL::ComPtr<IWICBitmapDecoder> decoder;
@@ -498,8 +495,8 @@ DecodedImage DecodeImage(const fs::path& path) {
     if (FAILED(converter->Initialize(frame.Get(), GUID_WICPixelFormat32bppRGBA,
         WICBitmapDitherTypeNone, nullptr, 0.0, WICBitmapPaletteTypeCustom))) return image;
 
-    // WIC row 0 is the image top; OpenGL UV origin is the bottom. Let WIC flip while it decodes
-    // instead of copying the whole image a second time.
+    // WIC의 첫 행은 이미지 위쪽이고 OpenGL UV의 원점은 아래쪽이다.
+    // 이미지를 다시 복사하지 않도록 WIC가 디코딩하면서 상하를 뒤집게 한다.
     Microsoft::WRL::ComPtr<IWICBitmapFlipRotator> flipper;
     if (FAILED(gWicFactory->CreateBitmapFlipRotator(flipper.GetAddressOf()))) return image;
     if (FAILED(flipper->Initialize(converter.Get(), WICBitmapTransformFlipVertical))) return image;
@@ -519,14 +516,14 @@ size_t HardwareThreads() {
     return std::max<size_t>(std::thread::hardware_concurrency(), 1);
 }
 
-// Decodes `paths` on up to `maxThreads` threads (the calling thread included). CPU only, no OpenGL.
+// 호출 스레드를 포함해 최대 maxThreads개 스레드에서 경로의 이미지를 디코딩한다(OpenGL 사용 안 함).
 std::vector<DecodedImage> DecodeImagesParallel(const std::vector<fs::path>& paths, size_t maxThreads) {
     std::vector<DecodedImage> images(paths.size());
     if (paths.empty()) return images;
     const size_t threadCount = std::min(paths.size(), std::max<size_t>(maxThreads, 1));
     std::atomic<size_t> next{ 0 };
     const auto work = [&]() {
-        // Join the MTA explicitly; WIC objects are used only inside this thread.
+        // WIC 객체를 이 스레드 안에서만 사용하도록 MTA를 명시적으로 초기화한다.
         const HRESULT com = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
         for (size_t i = next++; i < paths.size(); i = next++) images[i] = DecodeImage(paths[i]);
         if (SUCCEEDED(com)) CoUninitialize();
@@ -539,8 +536,8 @@ std::vector<DecodedImage> DecodeImagesParallel(const std::vector<fs::path>& path
     return images;
 }
 
-// Adds existing, not-yet-claimed texture paths to `pending` and claims them, so each texture is
-// decoded once even when several models share it.
+// 존재하면서 아직 예약하지 않은 텍스처 경로를 pending에 넣고 예약한다.
+// 여러 모델이 공유하는 텍스처도 한 번만 디코딩한다.
 void ClaimTextures(const std::vector<fs::path>& paths, std::unordered_set<std::string>& claimed,
     std::vector<fs::path>& pending, std::vector<std::string>& keys) {
     for (const fs::path& path : paths) {
@@ -570,7 +567,7 @@ GLuint UploadTexture(const DecodedImage& image) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Indexing (identical vertices are stored once and referenced through an index buffer)
+// 인덱싱(동일한 정점을 한 번만 저장하고 인덱스 버퍼로 참조)
 // ---------------------------------------------------------------------------------------------
 
 struct VertexHash {
@@ -607,7 +604,7 @@ void BuildIndexedPart(const std::vector<Vertex>& triangles, CpuPart& part) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// OBJ parsing
+// OBJ 파싱
 // ---------------------------------------------------------------------------------------------
 
 void ParseObj(const fs::path& path, const std::string& contents, CpuMesh& mesh) {
@@ -616,15 +613,15 @@ void ParseObj(const fs::path& path, const std::string& contents, CpuMesh& mesh) 
     std::vector<glm::vec2> texcoords;
     std::unordered_map<std::string, std::vector<Vertex>> materialVertices;
     std::string currentMaterial = "__default";
-    // Bucket for currentMaterial; refreshed only on `usemtl` and created on the first face that uses it,
-    // so no empty "__default" part appears. unordered_map keeps value addresses stable across rehash.
+    // 현재 재질의 정점 목록은 usemtl에서 갱신하고 실제 면이 처음 나타날 때 생성한다.
+    // 빈 __default 파트가 생기지 않으며 unordered_map은 재해시 후에도 값 주소를 유지한다.
     std::vector<Vertex>* currentBucket = nullptr;
     glm::vec3 minimum(std::numeric_limits<float>::max());
     glm::vec3 maximum(std::numeric_limits<float>::lowest());
     int lineNumber = 0;
 
     struct FaceIndex { int position; int texcoord; int normal; };
-    std::vector<FaceIndex> face; // reused across all faces
+    std::vector<FaceIndex> face; // 모든 면을 파싱할 때 재사용
     face.reserve(8);
 
     const char* cursor = contents.data();
@@ -660,7 +657,7 @@ void ParseObj(const fs::path& path, const std::string& contents, CpuMesh& mesh) 
             glm::vec3 normal;
             if (ParseVec(rest, end, &normal.x, 3)) normals.push_back(glm::normalize(normal));
         }
-        // `mtllib` lines are handled by FindMaterialLibraries.
+        // mtllib 줄은 FindMaterialLibraries에서 처리한다.
         else if (tagLength == 6 && std::memcmp(p, "usemtl", 6) == 0) {
             currentMaterial = Trim(std::string(rest, end));
             currentBucket = nullptr;
@@ -670,7 +667,7 @@ void ParseObj(const fs::path& path, const std::string& contents, CpuMesh& mesh) 
             const char* item = SkipBlanks(rest, end);
             while (item < end) {
                 const char* itemEnd = SkipToken(item, end);
-                // Split "v/vt/vn"; parts after the third '/' are ignored.
+                // v/vt/vn을 나누고 세 번째 슬래시 이후 내용은 무시한다.
                 const char* partBegin[3] = { item, item, item };
                 const char* partEnd[3] = { item, item, item };
                 int part = 0;
@@ -696,7 +693,7 @@ void ParseObj(const fs::path& path, const std::string& contents, CpuMesh& mesh) 
             if (face.size() < 3) continue;
             if (!currentBucket) currentBucket = &materialVertices[currentMaterial];
 
-            // Triangulate polygons as a fan. Generate flat normals when the OBJ has none.
+            // 다각형을 부채꼴 모양의 삼각형으로 나눈다. 노말이 없으면 평면 노말을 만든다.
             for (size_t i = 1; i + 1 < face.size(); ++i) {
                 const FaceIndex triangle[3] = { face[0], face[i], face[i + 1] };
                 const glm::vec3 a = positions[triangle[0].position];
@@ -717,25 +714,25 @@ void ParseObj(const fs::path& path, const std::string& contents, CpuMesh& mesh) 
     for (const auto& pair : materialVertices) vertexCount += pair.second.size();
     if (vertexCount == 0) throw std::runtime_error("OBJ에 표시할 유효한 면(face)이 없습니다.");
 
-    // Center the model and normalize its largest dimension for predictable viewing.
+    // 모델을 중앙에 놓고 가장 긴 축을 기준으로 크기를 맞춘다.
     const glm::vec3 center = (minimum + maximum) * 0.5f;
     const float largestDimension = std::max({ maximum.x - minimum.x, maximum.y - minimum.y, maximum.z - minimum.z });
     const float normalizeScale = largestDimension > 0.00001f ? 2.0f / largestDimension : 1.0f;
     const bool isOriginalRestaurantMap = path.filename() == "BFBBR - Krusty Krab.obj";
     const bool isInteriorMap = path.filename() == "Krusty_Krab_Interior.obj";
     const bool isRestaurantMap = isOriginalRestaurantMap || isInteriorMap;
-    // This source includes a large surrounding world; scale the restaurant for comfortable interior viewing.
+    // 원본에는 넓은 주변 배경이 포함되어 있으므로 실내를 보기 좋게 식당 크기를 조정한다.
     mesh.displayScale = isInteriorMap ? kInteriorMapDisplayScale : (isOriginalRestaurantMap ? 96.0f : 1.0f);
     mesh.cameraMoveSpeed = isRestaurantMap ? kMapMoveSpeed : kMoveSpeed;
     mesh.cameraStartPosition = glm::vec3(0.0f, 0.0f, 4.0f);
     mesh.cameraPitch = 0.0f;
     if (isOriginalRestaurantMap) {
-        // The restaurant geometry is grouped around this source-space point in the OBJ.
+        // 식당 메시가 OBJ 원본 좌표계에서 이 지점 주변에 모여 있다.
         const glm::vec3 restaurantInterior(0.73f, 0.30f, -1.40f);
         mesh.cameraStartPosition = (restaurantInterior - center) * normalizeScale * mesh.displayScale;
     }
     else if (isInteriorMap) {
-        // Start inside the main restaurant, facing toward the front entrance (-Z).
+        // 식당 내부에서 정문(-Z)을 바라보며 시작한다.
         const glm::vec3 restaurantInterior(-2575.0f, -117.0f, 2588.0f);
         mesh.cameraStartPosition = (restaurantInterior - center) * normalizeScale * mesh.displayScale;
     }
@@ -744,19 +741,19 @@ void ParseObj(const fs::path& path, const std::string& contents, CpuMesh& mesh) 
         CpuPart part;
         part.materialName = pair.first;
         BuildIndexedPart(pair.second, part);
-        std::vector<Vertex>().swap(pair.second); // free the triangle list early
+        std::vector<Vertex>().swap(pair.second); // 삼각형 목록 메모리를 일찍 해제한다
         for (Vertex& vertex : part.vertices) vertex.position = (vertex.position - center) * normalizeScale * mesh.displayScale;
         mesh.parts.push_back(std::move(part));
     }
 }
 
 // ---------------------------------------------------------------------------------------------
-// Binary mesh cache (%LOCALAPPDATA%\CGFP-ObjectViewer\cache). A cache file is used only when the
-// OBJ's size and modification time still match; otherwise the OBJ is parsed and the cache rewritten.
+// 바이너리 메시 캐시(%LOCALAPPDATA%\CGFP-ObjectViewer\cache).
+// OBJ의 크기와 수정 시간이 같을 때만 사용하며, 다르면 OBJ를 다시 읽어 캐시를 갱신한다.
 // ---------------------------------------------------------------------------------------------
 
 constexpr uint32_t kCacheMagic = 0x3143564F; // "OVC1"
-constexpr uint32_t kCacheVersion = 1;        // bump when parsing/scaling rules change
+constexpr uint32_t kCacheVersion = 1;        // 파싱 또는 배율 규칙이 바뀌면 올린다
 
 struct SourceStamp {
     uint64_t size = 0;
@@ -792,7 +789,7 @@ const fs::path& CacheDirectory() {
 fs::path CachePathFor(const fs::path& objPath) {
     std::wstring key = fs::absolute(objPath).lexically_normal().wstring();
     if (objPath.filename() == L"Krusty_Krab_Interior.obj") {
-        // Keep cached vertex positions in sync when this map's presentation scale changes.
+        // 맵 표시 배율이 바뀌면 캐시의 정점 좌표도 새 배율에 맞춰 갱신한다.
         key += L"|viewer-scale-";
         key += std::to_wstring(static_cast<int>(kInteriorMapDisplayScale));
     }
@@ -913,7 +910,7 @@ void WriteMeshCache(const fs::path& cachePath, const SourceStamp& stamp, const C
         writer.Bytes(part.indices.data(), part.indices.size() * sizeof(uint32_t));
     }
 
-    // Write to a temporary file first so a crash never leaves a half-written cache behind.
+    // 중간에 종료되어도 불완전한 캐시가 남지 않도록 임시 파일에 먼저 쓴다.
     std::error_code error;
     fs::create_directories(cachePath.parent_path(), error);
     fs::path temporary = cachePath;
@@ -933,7 +930,7 @@ void WriteMeshCache(const fs::path& cachePath, const SourceStamp& stamp, const C
 }
 
 // ---------------------------------------------------------------------------------------------
-// Loading one model on the loader thread (CPU work, then optional GPU upload)
+// 로더 스레드에서 모델 하나를 불러온다(CPU 작업 후 가능하면 GPU에 업로드)
 // ---------------------------------------------------------------------------------------------
 
 void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimedTextures,
@@ -946,15 +943,15 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
 
     std::string contents;
     if (!result.fromCache) {
-        // Read the whole file at once and walk it with pointers instead of getline + istringstream.
+        // 파일 전체를 한 번에 읽고 getline이나 istringstream 대신 포인터로 순회한다.
         if (!ReadWholeFile(path, contents)) throw std::runtime_error("파일을 열 수 없습니다.");
         mesh.materialLibraries = FindMaterialLibraries(contents);
     }
 
-    // Read the MTL first so the textures can be decoded on other threads while this thread parses.
-    // Only use the folder fallback when the OBJ has no usable material library at all.
-    // Assigning one arbitrary image to every map-less material paints unrelated geometry with
-    // atlas scraps and hides which parts are intentionally untextured in the source asset.
+    // 이 스레드가 OBJ를 파싱하는 동안 다른 스레드에서 텍스처를 디코딩하도록 MTL을 먼저 읽는다.
+    // 사용할 수 있는 재질 라이브러리가 전혀 없을 때만 폴더의 기본 텍스처를 사용한다.
+    // 텍스처가 지정되지 않은 모든 재질에 임의의 이미지를 입히면 다른 면까지 잘못 칠해지고,
+    // 원본에서 의도적으로 텍스처가 없는 부분도 구분할 수 없게 된다.
     const MaterialMap materials = LoadMaterials(path, mesh.materialLibraries);
     bool fallbackResolved = false;
     fs::path fallbackTexture;
@@ -979,8 +976,8 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
         ClaimTextures(diffuseTextures, claimedTextures, earlyTextures, earlyKeys);
         claimedHere.insert(claimedHere.end(), earlyKeys.begin(), earlyKeys.end());
     }
-    // Leave one core for the parser. (The future waits in its destructor, so an exception below
-    // still joins the decode before earlyTextures goes away.)
+    // 파서가 사용할 코어 하나를 남긴다. 아래에서 예외가 발생해도 future 소멸자가 디코딩 종료를
+    // 기다리므로 earlyTextures가 사라지기 전에 작업이 끝난다.
     std::future<std::vector<DecodedImage>> earlyDecode = std::async(std::launch::async, [&earlyTextures]() {
         return DecodeImagesParallel(earlyTextures, std::max<size_t>(HardwareThreads() - 1, 1));
     });
@@ -991,14 +988,14 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
         if (haveStamp) WriteMeshCache(cachePath, stamp, mesh);
     }
 
-    // Resolve each part's color and texture. The fallback folder scan only runs when needed.
+    // 각 파트의 색과 텍스처를 결정한다. 필요할 때만 폴더에서 기본 텍스처를 찾는다.
     std::vector<fs::path> partTextures;
     for (const CpuPart& part : mesh.parts) {
         Material material;
         const auto materialIt = materials.find(part.materialName);
         if (materialIt != materials.end()) material = materialIt->second;
         fs::path texturePath = material.diffuseTexture;
-        // Preserve the table's authored atlas even if an exporter omits its map_Kd binding.
+        // 내보내기 과정에서 map_Kd 연결이 빠져도 식탁의 원본 텍스처를 사용한다.
         if (part.materialName == "Kktable1Mtl" &&
             (texturePath.empty() || !fs::exists(texturePath))) {
             const fs::path tableAtlas = path.parent_path() / "Kktable1_diff.png";
@@ -1011,7 +1008,9 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
             }
             texturePath = fallbackTexture;
         }
-        result.partColors.push_back(material.color);
+        const bool isInteriorFryer = path.filename() == "Krusty_Krab_Interior.obj" &&
+            part.materialName == "Frier1Mtl" && !texturePath.empty();
+        result.partColors.push_back(isInteriorFryer ? glm::vec3(1.0f) : material.color);
         result.partOpacities.push_back(std::clamp(material.opacity, 0.0f, 1.0f));
         result.partTransparencyFlags.push_back(material.opacity < 0.999f ? 1 : 0);
         result.partTextureKeys.push_back(texturePath.empty() ? std::string() : TextureCacheKey(texturePath));
@@ -1020,7 +1019,7 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
         result.uniqueVertexCount += part.vertices.size();
     }
 
-    // Keep the early-decoded textures this model uses; release the claim on the others.
+    // 이 모델에서 쓰는 미리 디코딩한 텍스처만 남기고 나머지 예약은 해제한다.
     std::vector<DecodedImage> earlyImages = earlyDecode.get();
     for (size_t i = 0; i < earlyKeys.size(); ++i) {
         const bool used = std::find(result.partTextureKeys.begin(), result.partTextureKeys.end(), earlyKeys[i]) !=
@@ -1028,7 +1027,7 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
         if (used) result.newTextures.push_back({ earlyKeys[i], std::move(earlyImages[i]) });
         else claimedTextures.erase(earlyKeys[i]);
     }
-    // Decode anything that was not known before parsing.
+    // 파싱 전에는 알 수 없었던 텍스처를 디코딩한다.
     std::vector<fs::path> lateTextures;
     std::vector<std::string> lateKeys;
     ClaimTextures(partTextures, claimedTextures, lateTextures, lateKeys);
@@ -1041,8 +1040,7 @@ void LoadModelCpu(const fs::path& path, std::unordered_set<std::string>& claimed
     }
 }
 
-// Creates textures and vertex/index buffers. Needs a current OpenGL context: the loader thread's
-// shared context, or the main context when no shared context could be created.
+// 텍스처와 정점·인덱스 버퍼를 만든다. 로더의 공유 컨텍스트 또는 메인 OpenGL 컨텍스트가 필요하다.
 void UploadResult(LoadResult& result) {
     for (const DecodedTexture& texture : result.newTextures) {
         if (!gTextureCache.count(texture.key)) gTextureCache.emplace(texture.key, UploadTexture(texture.image));
@@ -1052,8 +1050,8 @@ void UploadResult(LoadResult& result) {
     for (size_t i = 0; i < result.mesh.parts.size(); ++i) {
         const CpuPart& part = result.mesh.parts[i];
         GpuPart gpu;
-        // The table includes an inverted outline hull with constant-color UVs.
-        // Drawing its back faces covers the textured tabletop with solid red.
+        // 식탁에는 UV가 단색 영역에 모인 뒤집힌 외곽선 메시가 포함되어 있다.
+        // 그 뒷면을 그리면 텍스처가 있는 식탁 윗면이 빨간 단색으로 덮인다.
         gpu.cullBackFaces = part.materialName == "Kktable1Mtl";
         gpu.color = result.partColors[i];
         gpu.opacity = result.partOpacities[i];
@@ -1075,8 +1073,8 @@ void UploadResult(LoadResult& result) {
                 << " (OpenGL id " << gpu.texture << ")\n";
         }
         gpu.indexCount = static_cast<GLsizei>(part.indices.size());
-        // Both buffers are filled through GL_ARRAY_BUFFER: binding GL_ELEMENT_ARRAY_BUFFER needs a
-        // VAO in a core profile, and VAOs are created later by the main context.
+        // 두 버퍼 모두 GL_ARRAY_BUFFER로 채운다. 코어 프로파일에서 GL_ELEMENT_ARRAY_BUFFER를
+        // 연결하려면 VAO가 필요하지만 VAO는 나중에 메인 컨텍스트에서 생성한다.
         glGenBuffers(1, &gpu.vbo);
         glBindBuffer(GL_ARRAY_BUFFER, gpu.vbo);
         glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(part.vertices.size() * sizeof(Vertex)), part.vertices.data(), GL_STATIC_DRAW);
@@ -1091,7 +1089,7 @@ void UploadResult(LoadResult& result) {
     result.uploaded = true;
 }
 
-// One background thread that loads models in request order (urgent requests jump the queue).
+// 요청 순서대로 모델을 읽는 백그라운드 스레드 하나(긴급 요청은 대기열 맨 앞으로 보냄).
 class ModelLoader {
 public:
     void Start(GLFWwindow* uploadContext) {
@@ -1108,7 +1106,7 @@ public:
         wake_.notify_one();
     }
 
-    // Moves an already queued request to the front (no-op if it is running or finished).
+    // 대기 중인 요청을 맨 앞으로 옮긴다(실행 중이거나 완료된 요청은 그대로 둔다).
     void Prioritize(int modelId) {
         std::lock_guard<std::mutex> lock(mutex_);
         const auto it = std::find_if(queue_.begin(), queue_.end(), [modelId](const Job& job) { return job.modelId == modelId; });
@@ -1176,7 +1174,7 @@ private:
             }
             if (result.ok && uploadContext_) {
                 UploadResult(result);
-                glFinish(); // the objects must be complete before the main context uses them
+                glFinish(); // 메인 컨텍스트에서 사용하기 전에 GPU 객체 생성이 끝나야 한다
             }
             result.milliseconds = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
 
@@ -1200,7 +1198,7 @@ private:
 ModelLoader gLoader;
 
 // ---------------------------------------------------------------------------------------------
-// Model list / selection (main thread)
+// 모델 목록과 선택(메인 스레드)
 // ---------------------------------------------------------------------------------------------
 
 std::vector<fs::path> FindObjFiles(const fs::path& root) {
@@ -1259,7 +1257,7 @@ void RequestLoad(Model& model, bool urgent) {
     }
 }
 
-// Loads the models next to `index` in the background so ←/→ can switch instantly.
+// 방향키로 즉시 전환할 수 있도록 선택 모델의 양옆 모델을 백그라운드에서 불러온다.
 void PrefetchNeighbors(size_t index) {
     const size_t count = gModels.size();
     if (count < 2) return;
@@ -1270,7 +1268,7 @@ void PrefetchNeighbors(size_t index) {
 void ShowModel(GLFWwindow* window, size_t index) {
     const Model& model = gModels[index];
     gShownModelId = model.id;
-    // Camera start values come from loading, so they are applied only once the model is loaded.
+    // 카메라 시작 값은 모델을 읽을 때 결정되므로 로딩이 끝난 뒤에 적용한다.
     gCamera.position = model.cameraStartPosition;
     gCamera.yaw = -90.0f;
     gCamera.pitch = model.cameraPitch;
@@ -1278,8 +1276,8 @@ void ShowModel(GLFWwindow* window, size_t index) {
     PrefetchNeighbors(index);
 }
 
-// Makes gModels[index] the wanted model. It is shown at once if loaded; otherwise the current
-// model stays on screen while it loads in the background.
+// gModels[index]를 선택한다. 이미 읽은 모델은 바로 보여주고,
+// 아직 읽는 중이면 현재 모델을 계속 표시한다.
 void RequestTarget(GLFWwindow* window, size_t index, int direction) {
     Model& model = gModels[index];
     gTargetModelId = model.id;
@@ -1302,7 +1300,7 @@ void SelectModel(GLFWwindow* window, int direction) {
 }
 
 void FinalizeModel(Model& model, LoadResult& result) {
-    if (!result.uploaded) UploadResult(result); // no shared context: upload here on the main thread
+    if (!result.uploaded) UploadResult(result); // 공유 컨텍스트가 없으면 메인 스레드에서 업로드
     for (const GpuPart& gpu : result.gpuParts) {
         MeshPart part;
         part.cullBackFaces = gpu.cullBackFaces;
@@ -1349,7 +1347,7 @@ void HandleLoadResult(GLFWwindow* window, LoadResult& result) {
             std::cerr << "No valid OBJ files found." << std::endl;
         }
         else if (wasTarget) {
-            // Keep going in the direction the user was browsing.
+            // 사용자가 탐색하던 방향으로 계속 이동한다.
             const size_t count = gModels.size();
             const size_t next = gTargetDirection > 0 ? (index >= count ? 0 : index) : (index == 0 ? count - 1 : index - 1);
             RequestTarget(window, next, gTargetDirection);
@@ -1374,7 +1372,7 @@ void ProcessLoadResults(GLFWwindow* window) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Input
+// 입력
 // ---------------------------------------------------------------------------------------------
 
 void KeyCallback(GLFWwindow* window, int key, int, int action, int) {
@@ -1421,7 +1419,7 @@ void ProcessMovement(GLFWwindow* window, float deltaTime) {
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) gCamera.position.y -= distance;
 }
 
-// Call after gLoader.Stop(): from then on the main thread owns every OpenGL object.
+// gLoader.Stop() 이후에 호출한다. 그때부터 메인 스레드가 모든 OpenGL 객체를 소유한다.
 void Cleanup() {
     for (Model& model : gModels) {
         for (MeshPart& part : model.parts) {
@@ -1464,8 +1462,8 @@ int main() {
             glfwTerminate();
             throw std::runtime_error("OpenGL 창을 만들 수 없습니다.");
         }
-        // A hidden window whose context shares buffers/textures with the main one, so the loader
-        // thread can upload to the GPU without stalling rendering.
+        // 메인 창과 버퍼·텍스처를 공유하는 숨겨진 창을 만든다.
+        // 로더 스레드가 화면 그리기를 멈추지 않고 GPU에 업로드할 수 있다.
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         GLFWwindow* uploadWindow = glfwCreateWindow(1, 1, "Object Viewer loader", nullptr, window);
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
@@ -1481,7 +1479,7 @@ int main() {
             glfwTerminate();
             throw std::runtime_error("GLEW 초기화 실패: " + std::string(reinterpret_cast<const char*>(glewGetErrorString(glewStatus))));
         }
-        // GLEW may emit INVALID_ENUM while probing core contexts.
+        // GLEW가 코어 컨텍스트를 확인하면서 INVALID_ENUM을 낼 수 있다.
         glGetError();
 
         glfwSetKeyCallback(window, KeyCallback);
@@ -1494,7 +1492,7 @@ int main() {
         const GLuint program = LoadShaderProgram(shaderDirectory);
         const Uniforms uniforms = FindUniforms(program);
 
-        // Only collect paths here; models load in the background when shown or about to be shown.
+        // 여기서는 경로만 모은다. 모델은 표시할 때나 곧 표시할 차례일 때 백그라운드에서 읽는다.
         int nextModelId = 0;
         for (const fs::path& path : FindObjFiles(modelDirectory)) {
             Model model;

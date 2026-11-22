@@ -105,6 +105,9 @@
     <ClCompile Include="Object\Collider.cpp">
       <Filter>오브젝트</Filter>
     </ClCompile>
+    <ClCompile Include="Object\Door.cpp">
+      <Filter>오브젝트</Filter>
+    </ClCompile>
     <ClCompile Include="Object\Object.cpp">
       <Filter>오브젝트</Filter>
     </ClCompile>
@@ -180,6 +183,9 @@
       <Filter>카메라·캐릭터</Filter>
     </ClInclude>
     <ClInclude Include="Object\Collider.h">
+      <Filter>오브젝트</Filter>
+    </ClInclude>
+    <ClInclude Include="Object\Door.h">
       <Filter>오브젝트</Filter>
     </ClInclude>
     <ClInclude Include="Object\InteractableObject.h">

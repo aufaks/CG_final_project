@@ -23,6 +23,7 @@ public:
     bool LoadSkinnedModel(const std::string& gltfPath, float height);
     bool HasSkinnedModel() const { return skinned && skinned->IsLoaded(); }
     void Spawn(const glm::vec3& feetPosition, float yawDegrees);
+    void Teleport(const glm::vec3& feetPosition);
 
     void Update(float deltaTime) override;
     void Render(ShaderManager& shaders) const override;        // OBJ 모델 ("map" 셰이더). glTF를 쓰면 아무것도 안 한다

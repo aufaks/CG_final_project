@@ -140,6 +140,11 @@ void Player::Spawn(const glm::vec3& feetPosition, float yawDegrees) {
     SyncCamera();
 }
 
+void Player::Teleport(const glm::vec3& feetPosition) {
+    transform.position = feetPosition;
+    SyncCamera();
+}
+
 void Player::Update(float deltaTime) {
     if (InputManager::GetKeyDown(GLFW_KEY_V)) { // 1인칭 → 후방 → 전방 → 1인칭
         view = view == View::FirstPerson ? View::ThirdBack

@@ -161,6 +161,7 @@
     <ClCompile Include="Render\SkinnedModel.cpp" />
     <ClCompile Include="Order\CustomerManager.cpp" />
     <ClCompile Include="Object\Collider.cpp" />
+    <ClCompile Include="Object\Door.cpp" />
     <ClCompile Include="Object\Object.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -188,7 +189,9 @@
     <ClInclude Include="Character\Player.h" />
     <ClInclude Include="Character\Squidward.h" />
     <ClInclude Include="Object\Collider.h" />
+    <ClInclude Include="Object\Door.h" />
     <ClInclude Include="Object\InteractableObject.h" />
+    <ClInclude Include="Object\PickupObject.h" />
     <ClInclude Include="Object\Object.h" />
     <ClInclude Include="Object\Ray.h" />
     <ClInclude Include="Object\StaticObject.h" />
