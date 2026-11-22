@@ -18,8 +18,11 @@ import sys
 import tempfile
 import zipfile
 
+import bmesh
 import bpy
 from mathutils import Vector
+
+WELD_DISTANCE = 0.01  # 자동 가중치용 사본에서 이 거리(Blender 단위, 키 약 1.7) 안의 정점을 합친다
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'CGFP', 'obj', 'mixamo')
 UPLOAD = os.path.join(ROOT, 'upload')
@@ -65,6 +68,92 @@ def import_original(character, work):
     obj.data.materials.clear()
     obj.data.materials.append(mat)
     return obj
+
+
+def auto_weights(original, armature, character):
+    """원본 메시에 뼈 가중치를 붙이고, 자동 가중치가 못 붙인 정점 번호 목록을 돌려준다."""
+    # 뼈 가중치: 원본 메시에 Blender 자동 가중치(본 히트)를 계산한다.
+    # 저폴리 프록시의 가중치를 옮겨 오면 팔처럼 가는 부위가 팔꿈치 아래까지 위팔 뼈 하나에 붙어 버려서 쓰지 않는다.
+    # 자동 가중치가 못 붙인 정점(떨어진 조각 등)만 프록시에서 옮겨 온다.
+    # 원본은 UV 경계마다 정점이 쪼개져 있어서 본 히트가 실패한다. 정점을 합친 사본에서 계산해 원본으로 옮긴다.
+    welded = original.copy()
+    welded.data = original.data.copy()
+    bpy.context.collection.objects.link(welded)
+    bm = bmesh.new()
+    bm.from_mesh(welded.data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=WELD_DISTANCE)
+    bm.to_mesh(welded.data)
+    bm.free()
+    armature.data.pose_position = 'REST'
+    bpy.context.view_layer.update()
+    bpy.ops.object.select_all(action='DESELECT')
+    welded.select_set(True)
+    armature.select_set(True)
+    bpy.context.view_layer.objects.active = armature
+    bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+    armature.data.pose_position = 'POSE'
+    for mod in list(welded.modifiers):
+        welded.modifiers.remove(mod)
+    welded.parent = None
+    welded.matrix_world = original.matrix_world
+
+    for group in welded.vertex_groups:
+        original.vertex_groups.new(name=group.name)
+    bpy.context.view_layer.objects.active = original
+    copy_back = original.modifiers.new('WeldedWeights', 'DATA_TRANSFER')
+    copy_back.object = welded
+    copy_back.use_vert_data = True
+    copy_back.data_types_verts = {'VGROUP_WEIGHTS'}
+    copy_back.vert_mapping = 'NEAREST'
+    copy_back.layers_vgroup_select_src = 'ALL'
+    copy_back.layers_vgroup_select_dst = 'NAME'
+    bpy.ops.object.modifier_apply(modifier=copy_back.name)
+    bpy.data.objects.remove(welded, do_unlink=True)
+
+    unweighted = [v.index for v in original.data.vertices if not any(g.weight > 1e-4 for g in v.groups)]
+    print('[%s] 자동 가중치 없는 정점 %d / %d' % (character, len(unweighted), len(original.data.vertices)))
+    return unweighted
+
+
+def export_gltf(character, armature, original, clips):
+    """메시를 뼈대에 붙이고 클립마다 NLA 트랙을 만들어 anim/<캐릭터>.gltf로 내보낸다."""
+    # 뼈대에 붙이기
+    world = original.matrix_world.copy()
+    original.parent = armature
+    original.matrix_world = world
+    mod = original.modifiers.new('Armature', 'ARMATURE')
+    mod.object = armature
+
+    # 클립마다 NLA 트랙 하나 → glTF 애니메이션 하나
+    data = armature.animation_data or armature.animation_data_create()
+    data.action = None
+    for track in list(data.nla_tracks):
+        data.nla_tracks.remove(track)
+    for clip, action in clips:
+        track = data.nla_tracks.new()
+        track.name = clip
+        strip = track.strips.new(clip, int(action.frame_range[0]), action)
+        if hasattr(strip, 'action_slot') and getattr(action, 'slots', None):
+            strip.action_slot = action.slots[0]
+
+    os.makedirs(OUT, exist_ok=True)
+    out_path = os.path.join(OUT, character + '.gltf')
+    bpy.ops.object.select_all(action='DESELECT')
+    armature.select_set(True)
+    original.select_set(True)
+    bpy.ops.export_scene.gltf(
+        filepath=out_path,
+        export_format='GLTF_SEPARATE',
+        use_selection=True,
+        export_yup=True,
+        export_skins=True,
+        export_animations=True,
+        export_animation_mode='NLA_TRACKS',
+        export_force_sampling=True,
+        export_def_bones=True,
+        export_texture_dir='',
+    )
+    return out_path
 
 
 def convert(character):
@@ -120,55 +209,28 @@ def convert(character):
     bpy.context.view_layer.objects.active = original
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
-    # 프록시의 뼈 가중치를 가장 가까운 면에서 옮겨 온다
-    for group in proxy.vertex_groups:
-        original.vertex_groups.new(name=group.name)
-    transfer = original.modifiers.new('WeightTransfer', 'DATA_TRANSFER')
-    transfer.object = proxy
-    transfer.use_vert_data = True
-    transfer.data_types_verts = {'VGROUP_WEIGHTS'}
-    transfer.vert_mapping = 'POLYINTERP_NEAREST'
-    transfer.layers_vgroup_select_src = 'ALL'
-    transfer.layers_vgroup_select_dst = 'NAME'
-    bpy.ops.object.modifier_apply(modifier=transfer.name)
-
-    # 뼈대에 붙이기
-    world = original.matrix_world.copy()
-    original.parent = armature
-    original.matrix_world = world
-    mod = original.modifiers.new('Armature', 'ARMATURE')
-    mod.object = armature
+    unweighted = auto_weights(original, armature, character)
+    if unweighted:
+        for group in proxy.vertex_groups:
+            if group.name not in original.vertex_groups:
+                original.vertex_groups.new(name=group.name)
+        mask = original.vertex_groups.new(name='_Unweighted')
+        mask.add(unweighted, 1.0, 'REPLACE')
+        transfer = original.modifiers.new('WeightTransfer', 'DATA_TRANSFER')
+        transfer.object = proxy
+        transfer.use_vert_data = True
+        transfer.data_types_verts = {'VGROUP_WEIGHTS'}
+        transfer.vert_mapping = 'POLYINTERP_NEAREST'
+        transfer.layers_vgroup_select_src = 'ALL'
+        transfer.layers_vgroup_select_dst = 'NAME'
+        transfer.vertex_group = mask.name
+        bpy.context.view_layer.objects.active = original
+        bpy.ops.object.modifier_move_to_index(modifier=transfer.name, index=0)
+        bpy.ops.object.modifier_apply(modifier=transfer.name)
+        original.vertex_groups.remove(original.vertex_groups['_Unweighted'])
     bpy.data.objects.remove(proxy, do_unlink=True)
 
-    # 클립마다 NLA 트랙 하나 → glTF 애니메이션 하나
-    data = armature.animation_data or armature.animation_data_create()
-    data.action = None
-    for track in list(data.nla_tracks):
-        data.nla_tracks.remove(track)
-    for clip, action in clips:
-        track = data.nla_tracks.new()
-        track.name = clip
-        strip = track.strips.new(clip, int(action.frame_range[0]), action)
-        if hasattr(strip, 'action_slot') and getattr(action, 'slots', None):
-            strip.action_slot = action.slots[0]
-
-    os.makedirs(OUT, exist_ok=True)
-    out_path = os.path.join(OUT, character + '.gltf')
-    bpy.ops.object.select_all(action='DESELECT')
-    armature.select_set(True)
-    original.select_set(True)
-    bpy.ops.export_scene.gltf(
-        filepath=out_path,
-        export_format='GLTF_SEPARATE',
-        use_selection=True,
-        export_yup=True,
-        export_skins=True,
-        export_animations=True,
-        export_animation_mode='NLA_TRACKS',
-        export_force_sampling=True,
-        export_def_bones=True,
-        export_texture_dir='',
-    )
+    out_path = export_gltf(character, armature, original, clips)
     shutil.rmtree(work, ignore_errors=True)
     print('GLTF_OK [%s] 클립 %s → %s' % (character, [c for c, _ in clips], out_path))
     return True
@@ -181,4 +243,5 @@ def main():
     sys.exit(0 if ok else 1)
 
 
-main()
+if __name__ == '__main__':
+    main()

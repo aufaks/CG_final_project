@@ -22,6 +22,9 @@ MODELS = [
     ('FishH', 'obj/imported/sbfbbr-fish-h/Fish_H.obj', 'obj/imported/sbfbbr-fish-h/T_Fish_H_D.png', False, 0.38),
     ('Fred', 'obj/viewer_models/Fred.obj', 'obj/viewer_models/fish.png', False, 0.0),
     ('Morty', 'obj/viewer_models/Morty.obj', 'obj/viewer_models/Meshesmorty1_diff.png', True, 0.0),
+    # 플레이어·징징이 (둘 다 T포즈, 정면 +Z)
+    ('SpongeBob', 'obj/imported/spongebob-squarepants/spongebob_bind.obj', 'obj/imported/spongebob-squarepants/textures/spongebob.png', False, 0.0),
+    ('Squidward', 'obj/imported/squidwards-house/Mesh_0037.rip.obj', 'obj/imported/squidwards-house/t0077_0.png', False, 0.0),
 ]
 
 

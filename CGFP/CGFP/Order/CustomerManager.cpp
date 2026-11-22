@@ -44,6 +44,9 @@ void CustomerManager::Setup(const CustomerLayout& value, std::vector<Seat> seatL
     layout = value;
     if (glm::length(layout.queueDirection) > 0.0f) layout.queueDirection = glm::normalize(layout.queueDirection);
     seats = std::move(seatList);
+    // 좌석은 모두 같은 통이라 첫 좌석 크기로 모델마다 앉는 자세(무릎 각도)를 맞춘다
+    if (!seats.empty())
+        for (auto& model : models) model->FitSeat(seats.front().seatHeight, seats.front().seatRadius);
     squidward = squidwardPtr;
     orderManager = orders;
     customers.clear();

@@ -64,6 +64,12 @@ public:
     // CPU에서 정점 위치를 스키닝한다 (자세별 메시 모양을 미리 재 볼 때 쓴다. 매 프레임 쓰지 않는다)
     void SkinPositions(const std::vector<glm::mat4>& bones, std::vector<glm::vec3>& out) const;
 
+    // CPU 정점 사본과 뼈 번호 → 노드 번호 (자세별 메시 측정용)
+    const std::vector<glm::vec3>& GetCpuPositions() const { return cpuPositions; }
+    const std::vector<glm::uvec4>& GetCpuJoints() const { return cpuJoints; }
+    const std::vector<glm::vec4>& GetCpuWeights() const { return cpuWeights; }
+    const std::vector<int>& GetJointNodes() const { return joints; }
+
     const glm::vec3& GetBoundsMin() const { return boundsMin; } // 바인드 자세 기준
     const glm::vec3& GetBoundsMax() const { return boundsMax; }
     size_t GetNodeCount() const { return parents.size(); }

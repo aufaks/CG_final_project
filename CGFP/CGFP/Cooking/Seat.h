@@ -12,6 +12,7 @@ public:
 
     int number = -1;
     float seatHeight = 0.5f;            // 바닥에서 앉는 면까지 높이(월드)
+    float seatRadius = 0.0f;            // 앉는 면(통 윗면) 반지름(월드). 종아리가 통을 뚫지 않게 무릎 펴는 각도를 정할 때 쓴다
     std::vector<glm::vec3> approachPath; // 계산대 앞에서 이 자리까지 가는 경유점 (자리 자체는 빼고)
     Customer* customer = nullptr;        // 앉은(또는 가는 중인) 손님
 };

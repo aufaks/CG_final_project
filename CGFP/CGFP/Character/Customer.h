@@ -38,8 +38,19 @@ public:
     float depth = 0.0f;       // 월드 단위 앞뒤 두께. 줄 설 때 간격 계산에 쓴다
     float walkSpeed = 1.0f;   // Walk 클립을 1배속으로 재생할 때 발이 미끄러지지 않는 이동 속도(월드/초)
     glm::vec3 sitHips{ 0.0f }; // SitIdle 첫 프레임의 Hips 위치 (glTF 모델 공간). 좌석 중심에 맞춘다
-    float sitBottomY = 0.0f;   // SitIdle 첫 프레임에서 엉덩이 아래 메시(엉덩이·치마 끝)의 가장 낮은 높이. 좌석 면에 맞춘다
+    float sitBottomY = 0.0f;   // SitIdle 첫 프레임 메시의 엉덩이·허벅지 아랫면 높이. 좌석 면에 맞춘다
+    glm::vec3 sitContact{ 0.0f }; // 좌석에 닿는 면의 가운데 - Hips (SitIdle 첫 프레임, y는 0). 좌석 중심에 맞춘다
+    int hipsNode = -1;
     bool hasSitHips = false;
+    int kneeNodes[2] = { -1, -1 }; // LeftLeg, RightLeg
+    float sitKneeAngle = 0.0f;     // 앉아 있을 때 무릎을 더 펴는 각도(도). 종아리가 통 옆면을 뚫지 않게 FitSeat이 정한다
+
+    // 좌석 크기(월드)에 맞춰 sitKneeAngle을 정한다. 앉은 자세 메시를 무릎 각도별로 스키닝해 보고
+    // 좌석 면보다 아래로 내려간 종아리·발이 좌석 원기둥 밖으로 나오는 가장 작은 각도를 고른다.
+    void FitSeat(float seatHeight, float seatRadius);
+
+private:
+    bool MeasureSitContact(const std::vector<glm::mat4>& globals, float modelHeight);
 };
 
 // 손님 NPC. 애니메이션은 Animator가 클립을 재생하고, 여기서는 상태에 맞는 클립만 고른다.
@@ -61,6 +72,7 @@ public:
     void FaceYaw(float yawDegrees) { targetYaw = yawDegrees; } // 멈춰 있을 때 이 방향으로 돈다
 
     // 좌석에 앉는다. seatHeight = 바닥에서 앉는 면까지 높이(월드)
+    // 엉덩이·허벅지가 좌석 면 가운데에 닿도록 몸을 옮긴다
     void SitDown(const glm::vec3& seatPosition, float yawDegrees, float seatHeight);
 
     float GetDepth() const { return model.depth; }

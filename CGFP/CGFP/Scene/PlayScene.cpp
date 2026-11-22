@@ -13,6 +13,8 @@ namespace {
 const char* kMapPath = "obj/imported/krusty-krab-interior/Krusty_Krab_Interior.obj";
 const char* kPlayerModelPath = "obj/imported/spongebob-squarepants/spongebob_bind.obj";
 const char* kPlayerTexturePath = "obj/imported/spongebob-squarepants/textures/spongebob.png";
+// 뼈대 애니메이션 모델 (Idle·Walk 클립). 없으면 위 OBJ로 그린다
+const char* kPlayerGltfPath = "obj/mixamo/anim/SpongeBob.gltf";
 
 // ObjectViewer와 같은 배치: 가장 긴 변을 2로 맞춘 뒤 600배
 constexpr float kMapDisplayScale = 600.0f;
@@ -22,9 +24,8 @@ constexpr float kSpawnYaw = -90.0f;
 constexpr float kPlayerHeight = 1.0f;
 
 // 징징이: 계산대(배 모양 Boat1Mtl, "ORDER HERE" 간판 아래) 가운데에서 정문(-Z) 쪽 손님을 바라본다
-// (폴더 이름은 squidwards-house지만 안에 든 Mesh_0037.rip.obj는 징징이 캐릭터 모델이다)
-const char* kSquidwardModelPath = "obj/imported/squidwards-house/Mesh_0037.rip.obj";
-const char* kSquidwardTexturePath = "obj/imported/squidwards-house/t0077_0.png";
+// 모델·뼈대·애니메이션 클립은 tools/squidward_to_gltf.py가 squidwards-house/Mesh_0037.rip.obj에서 만든다
+const char* kSquidwardGltfPath = "obj/mixamo/anim/Squidward.gltf";
 const glm::vec3 kSquidwardFeetInObj(-2576.7f, -125.0f, 2595.4f);
 constexpr float kSquidwardYaw = 180.0f; // 모델 정면(코) +Z → -Z
 constexpr float kSquidwardHeight = 1.6f;
@@ -33,7 +34,10 @@ constexpr float kSquidwardHeight = 1.6f;
 constexpr float kFloorY = -125.5f;
 const glm::vec3 kEntranceInObj(-2576.7f, kFloorY, 2557.5f);     // 정문 바로 안쪽
 const glm::vec3 kCounterFrontInObj(-2576.7f, kFloorY, 2589.6f); // 징징이 정면, 계산대 앞면 바로 앞
-constexpr float kSeatTopY = -122.5f; // 통(의자) 윗면
+// 통 의자(Barrel1Mtl) 윗면. 바닥 -125.48 ~ 윗면 -122.45, 반지름 1.6.
+// (-121.35는 테이블 윗면 높이라 쓰면 손님이 통 위로 떠 버린다)
+constexpr float kSeatTopY = -122.45f;
+constexpr float kSeatRadius = 1.6f; // 통 반지름 (OBJ)
 
 // 테이블 6개 (Kktable1Mtl), 테이블마다 통 의자 2개 중 통로 쪽 하나에 앉는다.
 // 경유점은 계산대 줄(x -2576.7) 양옆으로 빠져서 다른 테이블을 피해 간다.
@@ -68,10 +72,11 @@ const glm::vec3 kLightDirection(-0.5f, -1.0f, -0.6f);
 void PlayScene::Enter() {
     player.camera.fovDegrees = 55.0f;
     player.camera.farPlane = 250.0f;
-    if (!player.LoadModel(kPlayerModelPath, kPlayerTexturePath, kPlayerHeight)) {
+    if (!player.LoadSkinnedModel(kPlayerGltfPath, kPlayerHeight) &&
+        !player.LoadModel(kPlayerModelPath, kPlayerTexturePath, kPlayerHeight)) {
         std::cerr << "[PlayScene] 플레이어 모델을 불러오지 못했습니다.\n";
     }
-    squidwardLoaded = squidward.LoadModel(kSquidwardModelPath, kSquidwardTexturePath, kSquidwardHeight);
+    squidwardLoaded = squidward.LoadModel(kSquidwardGltfPath, kSquidwardHeight);
     if (!squidwardLoaded) std::cerr << "[PlayScene] 징징이 모델을 불러오지 못했습니다.\n";
     // 징징이가 영수증을 주방 창구에 넣으면 주문표가 화면에 뜬다
     squidward.onReceiptSubmitted = [this](Order& order) { orderManager.Submit(order); };
@@ -84,6 +89,8 @@ void PlayScene::Enter() {
 void PlayScene::Exit() {
     InputManager::SetCursorCaptured(false);
     customerManager.customers.clear(); // 손님 메시(GL 버퍼)는 컨텍스트가 살아 있을 때 지운다
+    squidward.Unload();
+    squidwardLoaded = false;
     ui.Release();
     map.reset();
 }
@@ -107,6 +114,7 @@ void PlayScene::SetupCustomers() {
         const glm::vec2 toTable = def.table - def.seat;
         seat.transform.rotation.y = glm::degrees(std::atan2(toTable.x, toTable.y));
         seat.seatHeight = (kSeatTopY - kFloorY) * mapScale;
+        seat.seatRadius = kSeatRadius * mapScale;
         for (const glm::vec2& point : def.path) seat.approachPath.push_back(MapToWorld(glm::vec3(point.x, kFloorY, point.y)));
         seats.push_back(std::move(seat));
     }
@@ -180,13 +188,15 @@ void PlayScene::Render() {
         shaders.SetInt("uTexture", 0);
     };
 
-    // 뼈대 애니메이션 캐릭터(손님)는 GPU 스키닝 셰이더로 그린다
+    // 뼈대 애니메이션 캐릭터(손님·플레이어·징징이)는 GPU 스키닝 셰이더로 그린다
     useShader("skinned");
     customerManager.Render(shaders);
+    player.RenderSkinned(shaders);
+    if (squidwardLoaded) squidward.Render(shaders);
 
     useShader("map");
-    player.Render(shaders);
-    if (squidwardLoaded) squidward.Render(shaders);
+    player.Render(shaders); // glTF 모델을 쓰면 아무것도 안 그린다
+    if (squidwardLoaded) squidward.RenderProps(shaders); // 손에 든 영수증
     map->Draw(shaders, mapMatrix, camera.position);
 
     DrawOrderTickets(width, height);

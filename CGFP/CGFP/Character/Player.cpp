@@ -38,6 +38,15 @@ constexpr float kIdleArmSwaySpeed = 1.3f;
 constexpr float kIdleBodySwayAngle = 2.0f;
 constexpr float kIdleBodySwaySpeed = 0.9f;
 
+// glTF 클립 (tools/mixamo_to_gltf.py가 FBX 파일 이름을 클립 이름으로 쓴다)
+const char* kIdleClip = "Idle";
+const char* kWalkClip = "Walk";
+constexpr float kClipFade = 0.2f;
+// Mixamo 제자리 Walk를 1배속으로 틀 때 키 1 모델이 나아가야 하는 속도. 이동 속도에 맞춰 재생 속도를 바꾼다.
+constexpr float kWalkClipSpeedPerHeight = 1.2f;
+constexpr float kMinWalkClipRate = 0.6f;
+constexpr float kMaxWalkClipRate = 2.2f; // 너무 빨리 돌리면 종종걸음이 어색하다
+
 // spongebob_bind.obj의 그룹: 3D_Object_32 = -X 쪽 팔(오른팔), 3D_Object_42 = +X 쪽 팔(왼팔), 3D_Object_52 = 몸통+다리
 constexpr const char* kRightArmGroup = "3D_Object_32";
 constexpr const char* kLeftArmGroup = "3D_Object_42";
@@ -101,6 +110,29 @@ bool Player::LoadModel(const std::string& objPath, const std::string& texturePat
     return true;
 }
 
+bool Player::LoadSkinnedModel(const std::string& gltfPath, float height) {
+    auto model = std::make_unique<SkinnedModel>();
+    if (!model->Load(gltfPath) || !model->FindClip(kIdleClip)) return false;
+    skinned = std::move(model);
+    animator.SetModel(skinned.get());
+    animator.Play(kIdleClip, true, 0.0f);
+    animator.Update(0.0f);
+
+    // 발이 원점, 가로·앞뒤 중심이 원점에 오게 옮기고 키를 height로 맞춘다 (바인드 자세 기준)
+    const glm::vec3 boundsMin = skinned->GetBoundsMin();
+    const glm::vec3 boundsMax = skinned->GetBoundsMax();
+    const float modelHeight = boundsMax.y - boundsMin.y;
+    const float scale = modelHeight > 0.0f ? height / modelHeight : 1.0f;
+    const glm::vec3 pivot((boundsMin.x + boundsMax.x) * 0.5f, boundsMin.y, (boundsMin.z + boundsMax.z) * 0.5f);
+    modelOffset = glm::scale(glm::mat4(1.0f), glm::vec3(scale)) * glm::translate(glm::mat4(1.0f), -pivot);
+    walkClipSpeed = kWalkClipSpeedPerHeight * height;
+
+    eyeHeight = height * kEyeHeightRatio;
+    eyeForward = (boundsMax.z - pivot.z) * scale + height * kEyeForwardMargin;
+    firstPersonNear = height * kFirstPersonNearRatio;
+    return true;
+}
+
 void Player::Spawn(const glm::vec3& feetPosition, float yawDegrees) {
     transform.position = feetPosition;
     camera.yaw = yawDegrees;
@@ -145,6 +177,18 @@ void Player::UpdateWalkAnimation(float deltaTime, bool moving) {
     const float target = moving ? 1.0f : 0.0f;
     walkBlend += (target - walkBlend) * glm::min(1.0f, deltaTime * kWalkBlendSpeed);
     if (moving) walkPhase = std::fmod(walkPhase + kWalkCycleSpeed * deltaTime, 6.28318531f);
+
+    // glTF 모델: 상태에 맞는 클립을 재생한다 (Animator가 바뀔 때 섞어 준다)
+    if (HasSkinnedModel()) {
+        if (moving) {
+            animator.Play(kWalkClip, true, kClipFade);
+            animator.speed = glm::clamp(moveSpeed / walkClipSpeed, kMinWalkClipRate, kMaxWalkClipRate);
+        } else {
+            animator.Play(kIdleClip, true, kClipFade);
+            animator.speed = 1.0f;
+        }
+        animator.Update(deltaTime);
+    }
 }
 
 glm::mat4 Player::GetPartMatrix(int part) const {
@@ -191,8 +235,13 @@ void Player::SyncCamera() {
     }
 }
 
+void Player::RenderSkinned(ShaderManager& shaders) const {
+    if (!visible || !HasSkinnedModel()) return;
+    skinned->Draw(shaders, transform.GetMatrix() * modelOffset, animator.GetBones());
+}
+
 void Player::Render(ShaderManager& shaders) const {
-    if (!visible || !mesh) return;
+    if (!visible || !mesh || HasSkinnedModel()) return;
     shaders.SetMat4("uModel", transform.GetMatrix() * modelOffset);
     shaders.SetVec3("uColor", color);
     shaders.SetFloat("uOpacity", 1.0f);

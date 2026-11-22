@@ -18,8 +18,12 @@ import bpy
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'CGFP', 'obj', 'mixamo', 'upload')
 OUT = os.path.join(ROOT, 'proxy')
 TARGET_FACES = 1200
-CHARACTERS = ['FishG', 'FishH', 'Fred', 'Morty']
+CHARACTERS = ['FishG', 'FishH', 'Fred', 'Morty', 'SpongeBob', 'Squidward']
 THIN_PARTS = {'Fred': 4.0}  # 캐릭터 → 메시 전체에 줄 두께(cm)
+# 캐릭터별 목표 면 수. 징징이처럼 원래 가늘고 면이 적은 모델은 줄이면 다리·목이 뭉개져 Mixamo가 실패한다
+TARGET_FACES_BY_CHARACTER = {'Squidward': 600}
+# 메시가 열려 있거나 겹친 면이 많아 Mixamo가 "Unknown error"를 내는 캐릭터는 복셀로 다시 짜서 닫힌 메시로 만든다 (복셀 크기 cm)
+VOXEL_REMESH = {'Squidward': 1.5}
 
 
 def make(name):
@@ -36,10 +40,16 @@ def make(name):
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.remove_doubles(threshold=0.01)
     bpy.ops.object.mode_set(mode='OBJECT')
+    if name in VOXEL_REMESH:
+        mod = obj.modifiers.new('Remesh', 'REMESH')
+        mod.mode = 'VOXEL'
+        mod.voxel_size = VOXEL_REMESH[name]
+        bpy.ops.object.modifier_apply(modifier=mod.name)
     faces = len(obj.data.polygons)
-    if faces > TARGET_FACES:
+    target = TARGET_FACES_BY_CHARACTER.get(name, TARGET_FACES)
+    if faces > target:
         mod = obj.modifiers.new('Decimate', 'DECIMATE')
-        mod.ratio = TARGET_FACES / faces
+        mod.ratio = target / faces
         bpy.ops.object.modifier_apply(modifier=mod.name)
     if name in THIN_PARTS:
         # 두께가 없는 판(Fred의 지느러미 팔)은 자동 리깅이 팔로 인식하지 못하므로 두께를 준다
@@ -72,5 +82,5 @@ def make(name):
     print('PROXY %s: %d -> %d faces, %d bytes' % (name, faces, len(obj.data.polygons), os.path.getsize(zip_path)))
 
 
-for c in CHARACTERS:
+for c in (sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else CHARACTERS):
     make(c)

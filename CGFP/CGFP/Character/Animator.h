@@ -2,6 +2,7 @@
 #include "Render/SkinnedModel.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 // SkinnedModel의 애니메이션 클립을 재생한다. 캐릭터 인스턴스마다 하나씩 갖는다.
@@ -21,6 +22,11 @@ public:
     float GetProgress() const; // 0~1
     bool IsFinished() const;   // 반복하지 않는 클립이 끝까지 재생됨
     glm::vec3 GetNodePosition(int node) const; // 마지막 Update 기준 모델 공간 위치
+    glm::mat4 GetNodeMatrix(int node) const;   // 마지막 Update 기준 모델 공간 전역 행렬
+
+    // 클립 자세 위에 더하는 노드 로컬 회전 (클립 회전 뒤에 곱한다). 앉았을 때 무릎 펴기처럼 클립을 조금 고칠 때 쓴다.
+    void SetExtraRotation(int node, const glm::quat& rotation);
+    void ClearExtraRotations() { extraRotations.clear(); }
 
     float speed = 1.0f; // 재생 속도 배율
 
@@ -41,4 +47,5 @@ private:
     std::vector<NodePose> previousPose;
     std::vector<glm::mat4> globals;
     std::vector<glm::mat4> bones;
+    std::vector<std::pair<int, glm::quat>> extraRotations;
 };

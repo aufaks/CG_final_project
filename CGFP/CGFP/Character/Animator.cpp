@@ -64,6 +64,9 @@ void Animator::Update(float deltaTime) {
     } else {
         previous = Layer{};
     }
+    for (const auto& [node, rotation] : extraRotations) {
+        if (node >= 0 && node < static_cast<int>(pose.size())) pose[node].rotation = pose[node].rotation * rotation;
+    }
 
     model->ComputeGlobalMatrices(pose, globals);
     model->ComputeBoneMatrices(globals, bones);
@@ -89,4 +92,19 @@ bool Animator::IsFinished() const {
 glm::vec3 Animator::GetNodePosition(int node) const {
     if (node < 0 || node >= static_cast<int>(globals.size())) return glm::vec3(0.0f);
     return glm::vec3(globals[node][3]);
+}
+
+void Animator::SetExtraRotation(int node, const glm::quat& rotation) {
+    for (auto& [n, r] : extraRotations) {
+        if (n == node) {
+            r = rotation;
+            return;
+        }
+    }
+    extraRotations.emplace_back(node, rotation);
+}
+
+glm::mat4 Animator::GetNodeMatrix(int node) const {
+    if (node < 0 || node >= static_cast<int>(globals.size())) return glm::mat4(1.0f);
+    return globals[node];
 }
