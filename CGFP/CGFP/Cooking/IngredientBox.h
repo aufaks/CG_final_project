@@ -4,6 +4,7 @@
 #include "Render/ShaderManager.h"
 #include "Render/Texture.h"
 #include "Object/PickupObject.h"
+#include "Cooking/TrayStack.h"
 #include <cmath>
 #include <functional>
 
@@ -14,6 +15,20 @@ public:
                      const glm::mat4& matrix = glm::mat4(1.0f), float dropScale = 1.0f)
         : PickupObject(std::move(model), matrix, dropScale), type(type) {}
     IngredientType GetType() const { return type; }
+    bool CanFocus(const Player&) const override { return !attached; }
+    bool IsAttached() const { return attached; }
+    void UseOn(Player& player, InteractableObject* target) override {
+        auto* tray = dynamic_cast<TrayPickup*>(target);
+        if (!tray) return;
+        if (type == IngredientType::Ketchup || type == IngredientType::Mustard) {
+            // 소스통은 손에 유지하고 뿌려진 소스만 추가한다.
+            tray->AddSauce(type);
+            return;
+        }
+        tray->AddIngredient(GetModel(), type);
+        attached = true;
+        player.heldObject = nullptr;
+    }
     void UpdateHeld(const Player& player) override {
         const glm::vec3 forward = player.camera.GetForward();
         const glm::vec3 right = player.camera.GetRight();
@@ -35,6 +50,7 @@ public:
     }
 private:
     IngredientType type;
+    bool attached = false;
 };
 
 // 재료 상자: 상호작용하면 재료를 새로 생성

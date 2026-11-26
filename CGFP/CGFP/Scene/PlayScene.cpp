@@ -369,8 +369,12 @@ void PlayScene::Render() {
         } else if (auto* stack = dynamic_cast<TrayStack*>(object.get())) {
             stack->Draw(shaders, camera.position);
         } else if (auto* pickup = dynamic_cast<PickupObject*>(object.get())) {
-            if (pickup != spatulaPickup && pickup != player.heldObject)
+            const auto* ingredient = dynamic_cast<IngredientPickup*>(pickup);
+            if (ingredient && ingredient->IsAttached()) continue;
+            if (pickup != spatulaPickup && pickup != player.heldObject) {
                 pickup->GetModel().Draw(shaders, pickup->GetMatrix(), camera.position);
+                if (const auto* tray = dynamic_cast<TrayPickup*>(pickup)) tray->DrawContents(shaders, camera.position);
+            }
         }
     }
 
@@ -438,6 +442,7 @@ void PlayScene::Render() {
         glClear(GL_DEPTH_BUFFER_BIT);
         useShader("map");
         held->GetModel().Draw(shaders, held->GetMatrix(), camera.position);
+        if (const auto* tray = dynamic_cast<TrayPickup*>(held)) tray->DrawContents(shaders, camera.position);
     }
 
     DrawOrderTickets(width, height);

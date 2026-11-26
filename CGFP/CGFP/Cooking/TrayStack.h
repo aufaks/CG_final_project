@@ -1,5 +1,6 @@
 #pragma once
 #include "Object/PickupObject.h"
+#include "Cooking/Ingredient.h"
 #include "Render/ShaderManager.h"
 #include <functional>
 
@@ -60,6 +61,29 @@ private:
 class TrayPickup : public PickupObject {
 public:
     explicit TrayPickup(std::unique_ptr<Model> model) : PickupObject(std::move(model), glm::mat4(1.0f)) {}
+    Collider GetWorldCollider() const override {
+        glm::vec3 min = GetModel().GetBoundsMin() - glm::vec3(0.01f, 0.06f, 0.01f);
+        glm::vec3 max = GetModel().GetBoundsMax() + glm::vec3(0.01f, 0.06f, 0.01f);
+        max.y = glm::max(max.y, stackTop + 0.03f);
+        return Collider::FromLocalBounds(min, max, GetMatrix());
+    }
+    void AddIngredient(const Model& model, IngredientType type) {
+        AddLayer(&model, type, nullptr);
+    }
+    bool AddSauce(IngredientType type) {
+        auto sauce = std::make_unique<Model>();
+        const char* path = type == IngredientType::Ketchup
+            ? "obj/imported/burger-ingredients/KetchupPoured.obj"
+            : "obj/imported/burger-ingredients/MustardPoured.obj";
+        if (!sauce->LoadObj(path)) return false;
+        const Model* model = sauce.get();
+        AddLayer(model, type, std::move(sauce));
+        return true;
+    }
+    void DrawContents(ShaderManager& shaders, const glm::vec3& camera) const {
+        for (const auto& layer : layers)
+            layer.model->Draw(shaders, GetMatrix() * layer.localMatrix, camera);
+    }
     void UseOn(Player& player, InteractableObject* target) override {
         auto* surface = dynamic_cast<TrayPlacementSurface*>(target);
         if (!surface || !surface->CanFocus(player)) return;
@@ -91,6 +115,51 @@ public:
         SetWorldMatrix(matrix);
         player.heldObject = nullptr;
     }
+private:
+    struct Layer {
+        const Model* model = nullptr; // 일반 재료는 상호작용 배열이 소유한다.
+        std::unique_ptr<Model> sauce; // 뿌려진 소스는 트레이가 소유한다.
+        IngredientType type = IngredientType::Bottom_Bun;
+        glm::mat4 localMatrix{1.0f};
+    };
+    void AddLayer(const Model* model, IngredientType type, std::unique_ptr<Model> owned) {
+        const glm::vec3 min = model->GetBoundsMin();
+        const glm::vec3 max = model->GetBoundsMax();
+        float heightScale = 1.0f;
+        float heightContribution = 1.0f;
+        switch (type) {
+        case IngredientType::Top_Bun:
+            heightScale = 0.65f;
+            break;
+        case IngredientType::Lettuce:
+            heightScale = 0.75f;
+            heightContribution = 0.8f;
+            break;
+        case IngredientType::Cheese:
+        case IngredientType::Pickle:
+        case IngredientType::Tomato:
+        case IngredientType::Onion:
+            heightContribution = 0.8f;
+            break;
+        default:
+            break;
+        }
+        const bool sauce = type == IngredientType::Ketchup || type == IngredientType::Mustard;
+        const float gap = sauce ? 0.0008f : 0.0005f;
+        const float y = stackTop + gap - min.y * heightScale;
+        const glm::vec3 center((min.x + max.x) * 0.5f, 0.0f, (min.z + max.z) * 0.5f);
+        Layer layer;
+        layer.model = model;
+        layer.sauce = std::move(owned);
+        layer.type = type;
+        layer.localMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-center.x, y, -center.z)) *
+            glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, heightScale, 1.0f));
+        // 채소는 다음 재료에 살짝 눌리고, 평면 소스는 높이를 거의 차지하지 않는다.
+        stackTop += gap + (sauce ? 0.0f : (max.y - min.y) * heightScale * heightContribution);
+        layers.push_back(std::move(layer));
+    }
+    std::vector<Layer> layers;
+    float stackTop = 0.018f; // 쟁반 안쪽 바닥 높이
 };
 
 inline bool TrayPlacementSurface::CanFocus(const Player& player) const {
