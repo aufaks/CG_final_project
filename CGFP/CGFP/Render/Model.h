@@ -24,7 +24,7 @@ public:
         bool cullBackFaces = false;
     };
 
-    bool LoadObj(const std::string& path);
+    bool LoadObj(const std::string& path, bool krustyKrab = false);
 
     // 불투명 파트를 먼저 그리고, 반투명 파트는 카메라에서 먼 순서로 그린다.
     void Draw(ShaderManager& shaders, const glm::mat4& modelMatrix, const glm::vec3& cameraPosition) const;

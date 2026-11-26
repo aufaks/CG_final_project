@@ -1,4 +1,5 @@
 #include "Render/Model.h"
+#include "Render/KrustyKrabRules.h"
 
 #include "Render/ResourceManager.h"
 #include "Render/ShaderManager.h"
@@ -102,7 +103,7 @@ int ParseIndex(const char* begin, const char* end, size_t count) {
 }
 } // namespace
 
-bool Model::LoadObj(const std::string& path) {
+bool Model::LoadObj(const std::string& path, bool krustyKrab) {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file) {
         std::cerr << "[Model] OBJ 파일을 열 수 없음: " << path << "\n";
@@ -188,15 +189,9 @@ bool Model::LoadObj(const std::string& path) {
                 const FaceIndex tri[3] = { face[0], face[i], face[i + 1] };
                 const glm::vec3& a = positions[tri[0].position];
                 const glm::vec3 centroid = (a + positions[tri[1].position] + positions[tri[2].position]) / 3.0f;
-                const bool kitchenHallDoor = currentMaterial == "Door1Mtl" &&
-                    centroid.x >= -2593.2f && centroid.x <= -2586.9f &&
-                    centroid.z >= 2600.2f && centroid.z <= 2601.7f;
-                const bool kitchenStorageDoor = currentMaterial == "Freezerdoorrim1Mtl";
-                // 주방 오른쪽 벽 조리도구 걸이의 두 번째 포크는 별도 뒤집개로 교체한다.
-                const bool replacedRackFork = currentMaterial == "Panrack1Mtl" &&
-                    centroid.x >= -2559.52f && centroid.x <= -2559.31f &&
-                    centroid.y >= -117.64f && centroid.y <= -113.87f &&
-                    centroid.z >= 2616.39f && centroid.z <= 2617.55f;
+                const bool kitchenHallDoor = krustyKrab && KrustyKrabRules::HallDoor(currentMaterial, centroid);
+                const bool kitchenStorageDoor = krustyKrab && KrustyKrabRules::StorageDoor(currentMaterial);
+                const bool replacedRackFork = krustyKrab && KrustyKrabRules::ReplacedFork(currentMaterial, centroid);
                 glm::vec3 faceNormal = glm::cross(positions[tri[1].position] - a, positions[tri[2].position] - a);
                 faceNormal = glm::length(faceNormal) > 1e-12f ? glm::normalize(faceNormal) : glm::vec3(0, 1, 0);
                 for (const FaceIndex& index : tri) {
@@ -258,9 +253,9 @@ bool Model::LoadObj(const std::string& path) {
             }
         }
         // 튀김기 텍스처 자체가 어두운 회색이므로 MTL의 낮은 Kd를 다시 곱하지 않는다.
-        if (name == "Frier1Mtl" && part.texture) part.color = glm::vec3(1.0f);
+        if (krustyKrab && name == "Frier1Mtl" && part.texture) part.color = glm::vec3(1.0f);
         part.transparent = part.opacity < 0.999f;
-        part.cullBackFaces = name == "Kktable1Mtl"; // 테이블 윗면이 겹쳐 깜빡이는 것을 막는다 (ObjectViewer와 같음)
+        part.cullBackFaces = krustyKrab && name == "Kktable1Mtl"; // 테이블 윗면이 겹쳐 깜빡이는 것을 막는다
         parts.push_back(std::move(part));
 
         std::vector<MeshVertex>().swap(vertices); // 업로드한 정점은 바로 해제
