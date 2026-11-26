@@ -13,6 +13,13 @@ struct KrustyKrabRules {
         return material == "Panrack1Mtl" && center.x >= -2559.52f && center.x <= -2559.31f &&
             center.y >= -117.64f && center.y <= -113.87f && center.z >= 2616.39f && center.z <= 2617.55f;
     }
+    static bool ReplacedSauceBottles(const std::string& material, const glm::vec3& center) {
+        // 주방 선반의 다섯 병과 펌프만 별도 상호작용 물체로 교체한다.
+        return (material == "Bottle1Mtl" || material == "Bottle3Mtl" || material == "Nozzle1Mtl") &&
+            center.x >= -2560.8f && center.x <= -2558.2f &&
+            center.y >= -121.9f && center.y <= -118.5f &&
+            center.z >= 2614.0f && center.z <= 2624.7f;
+    }
     static bool WarehouseClutter(const std::string& material, const glm::vec3& center) {
         // 창고 입구에서 바닥 위에 떠 있는 통과 벽을 뚫고 나온 얼음 장식을 숨긴다.
         const bool floatingBarrel = material == "Barrel1Mtl" &&

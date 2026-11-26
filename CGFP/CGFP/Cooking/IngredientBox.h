@@ -10,9 +10,29 @@
 // 꺼낸 재료가 종류를 유지하도록 집기 오브젝트에 저장한다.
 class IngredientPickup : public PickupObject {
 public:
-    IngredientPickup(IngredientType type, std::unique_ptr<Model> model)
-        : PickupObject(std::move(model), glm::mat4(1.0f)), type(type) {}
+    IngredientPickup(IngredientType type, std::unique_ptr<Model> model,
+                     const glm::mat4& matrix = glm::mat4(1.0f), float dropScale = 1.0f)
+        : PickupObject(std::move(model), matrix, dropScale), type(type) {}
     IngredientType GetType() const { return type; }
+    void UpdateHeld(const Player& player) override {
+        const glm::vec3 forward = player.camera.GetForward();
+        const glm::vec3 right = player.camera.GetRight();
+        const glm::vec3 up = glm::normalize(glm::cross(right, forward));
+        glm::mat4 matrix(1.0f);
+        matrix[0] = glm::vec4(right, 0.0f);
+        matrix[1] = glm::vec4(up, 0.0f);
+        matrix[2] = glm::vec4(-forward, 0.0f);
+        const bool isSauce = type == IngredientType::Ketchup || type == IngredientType::Mustard;
+        matrix[3] = glm::vec4(player.camera.position + forward * 0.65f + right * 0.34f - up * (isSauce ? 0.21f : 0.17f), 1.0f);
+        // 납작한 재료의 윗면을 카메라 쪽으로 기울인다.
+        if (!isSauce)
+            matrix = glm::rotate(matrix, glm::radians(65.0f), glm::vec3(1, 0, 0));
+        // 펌프 주둥이(+X)가 플레이어 앞쪽을 향하도록 돌린다.
+        matrix = glm::rotate(matrix, glm::radians(isSauce ? 90.0f : -15.0f), glm::vec3(0, 1, 0));
+        matrix = glm::scale(matrix, glm::vec3(isSauce ? 2.25f : 1.4f));
+        const glm::vec3 center = (GetModel().GetBoundsMin() + GetModel().GetBoundsMax()) * 0.5f;
+        SetHeldMatrix(glm::translate(matrix, -center));
+    }
 private:
     IngredientType type;
 };

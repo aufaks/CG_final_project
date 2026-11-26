@@ -193,6 +193,22 @@ void PlayScene::LoadMap() {
         spatulaPickup = pickup.get();
         interactions.Add(std::move(pickup));
     }
+    // 조리도구 걸이 아래 선반에 케첩과 머스타드를 하나씩 배치한다.
+    for (int i = 0; i < 2; ++i) {
+        const IngredientType type = i == 0 ? IngredientType::Ketchup : IngredientType::Mustard;
+        auto bottle = std::make_unique<Model>();
+        if (!bottle->LoadObj(IngredientModelPath(type))) {
+            std::cerr << "[PlayScene] 소스통 모델을 불러오지 못했습니다.\n";
+            continue;
+        }
+        constexpr float bottleScaleInObj = 17.6f;
+        const glm::vec3 position(-2559.55f, -121.72f, i == 0 ? 2617.4f : 2620.6f);
+        glm::mat4 bottleMatrix = mapMatrix * glm::translate(glm::mat4(1.0f), position) *
+            glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0, 1, 0)) *
+            glm::scale(glm::mat4(1.0f), glm::vec3(bottleScaleInObj));
+        interactions.Add(std::make_unique<IngredientPickup>(type, std::move(bottle), bottleMatrix,
+                                                            mapScale * bottleScaleInObj));
+    }
     // z=2601 벽에 있는 주방 출입문. 보이는 문짝은 맵에 포함되어 있다.
     // 이 충돌 박스는 출입문만 감싸고, 두 좌표는 양쪽의 안전한 도착 위치다.
     interactions.Add(std::make_unique<Door>(

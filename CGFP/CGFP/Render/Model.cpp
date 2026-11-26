@@ -192,6 +192,7 @@ bool Model::LoadObj(const std::string& path, bool krustyKrab) {
                 const bool kitchenHallDoor = krustyKrab && KrustyKrabRules::HallDoor(currentMaterial, centroid);
                 const bool kitchenStorageDoor = krustyKrab && KrustyKrabRules::StorageDoor(currentMaterial);
                 const bool hiddenClutter = krustyKrab && (KrustyKrabRules::ReplacedFork(currentMaterial, centroid) ||
+                    KrustyKrabRules::ReplacedSauceBottles(currentMaterial, centroid) ||
                     KrustyKrabRules::WarehouseClutter(currentMaterial, centroid));
                 glm::vec3 faceNormal = glm::cross(positions[tri[1].position] - a, positions[tri[2].position] - a);
                 faceNormal = glm::length(faceNormal) > 1e-12f ? glm::normalize(faceNormal) : glm::vec3(0, 1, 0);
