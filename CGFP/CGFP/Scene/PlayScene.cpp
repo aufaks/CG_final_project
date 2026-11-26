@@ -2,6 +2,7 @@
 
 #include "Core/GL.h"
 #include "Core/InputManager.h"
+#include "Cooking/IngredientBox.h"
 #include "Object/Door.h"
 #include "Object/PickupObject.h"
 #include "Object/Ray.h"
@@ -15,6 +16,13 @@
 namespace {
 const char* kMapPath = "obj/imported/krusty-krab-interior/Krusty_Krab_Interior.obj";
 const char* kSpatulaPath = "obj/imported/spatula-spongebob/SpatulaSpongebob.obj";
+const char* kIngredientModels[] = {
+    "BottomBun.obj", "Patty.obj", "Lettuce.obj", "Cheese.obj", "Pickle.obj",
+    "Tomato.obj", "Onion.obj", "KetchupBottle.obj", "MustardBottle.obj", "TopBun.obj"
+};
+std::string IngredientModelPath(IngredientType type) {
+    return std::string("obj/imported/burger-ingredients/") + kIngredientModels[static_cast<int>(type)];
+}
 const char* kPlayerModelPath = "obj/imported/spongebob-squarepants/spongebob_bind.obj";
 const char* kPlayerTexturePath = "obj/imported/spongebob-squarepants/textures/spongebob.png";
 // 뼈대 애니메이션 모델 (Idle·Walk 클립). 없으면 위 OBJ로 그린다
@@ -104,6 +112,8 @@ void PlayScene::Exit() {
     InputManager::SetCursorCaptured(false);
     spatulaPickup = nullptr;
     interactions.Clear(player);
+    ingredientBoxMesh.reset();
+    pendingIngredient.reset();
     customerManager.customers.clear(); // 손님 메시(GL 버퍼)는 컨텍스트가 살아 있을 때 지운다
     squidward.Unload();
     squidwardLoaded = false;
@@ -198,6 +208,7 @@ void PlayScene::LoadMap() {
         MapToWorld(glm::vec3(-2580.8f, kFloorY, 2626.6f)),
         MapToWorld(glm::vec3(-2580.8f, kFloorY, 2633.2f)),
         map->GetKitchenStorageDoorMesh()));
+    SetupIngredientBoxes();
     squidward.Place(MapToWorld(kSquidwardFeetInObj), kSquidwardYaw);
     if (customersLoaded) SetupCustomers();
 
@@ -221,9 +232,42 @@ void PlayScene::Update(float deltaTime) {
     if (InputManager::GetKeyDown(GLFW_KEY_F)) customerManager.StartEatingAll();
     player.Update(deltaTime);
     interactions.Update(player, map && InputManager::IsCursorCaptured(), kInteractionDistance);
+    if (pendingIngredient) {
+        DispenseIngredient(*pendingIngredient);
+        pendingIngredient.reset();
+    }
     orderManager.Update(deltaTime);
     if (map) customerManager.Update(deltaTime);
     if (squidwardLoaded) squidward.Update(deltaTime);
+}
+
+void PlayScene::SetupIngredientBoxes() {
+    // 소스통을 제외한 재료 상자를 양쪽에 네 개씩 놓는다.
+    ingredientBoxMesh = IngredientBox::CreateBoxMesh();
+    const IngredientType boxTypes[] = { IngredientType::Bottom_Bun, IngredientType::Patty,
+        IngredientType::Lettuce, IngredientType::Cheese, IngredientType::Pickle,
+        IngredientType::Tomato, IngredientType::Onion, IngredientType::Top_Bun };
+    Texture* contentsTexture = ResourceManager::Get().GetTexture("obj/imported/burger-ingredients/IngredientBoxContents.png");
+    for (int i = 0; i < 8; ++i) {
+        const auto type = boxTypes[i];
+        const glm::vec3 position = MapToWorld(glm::vec3(i < 4 ? -2597.0f : -2558.0f,
+                                                        kFloorY, 2641.0f + (i % 4) * 9.0f)) + glm::vec3(0, 0.25f, 0);
+        interactions.Add(std::make_unique<IngredientBox>(type, position, ingredientBoxMesh.get(), contentsTexture,
+            [this](IngredientType selected) { pendingIngredient = selected; }));
+    }
+}
+
+void PlayScene::DispenseIngredient(IngredientType type) {
+    if (player.heldObject) return;
+    auto model = std::make_unique<Model>();
+    if (!model->LoadObj(IngredientModelPath(type))) {
+        std::cerr << "[PlayScene] 재료 모델을 불러오지 못했습니다.\n";
+        return;
+    }
+    auto ingredient = std::make_unique<IngredientPickup>(type, std::move(model));
+    ingredient->OnInteract(player);
+    ingredient->UpdateHeld(player);
+    interactions.Add(std::move(ingredient));
 }
 
 void PlayScene::Render() {
@@ -264,15 +308,28 @@ void PlayScene::Render() {
     const glm::mat4 spatulaMatrix = spatulaPickup ? spatulaPickup->GetMatrix() : glm::mat4(1.0f);
     InteractableObject* focusedObject = interactions.Focused();
     if (spatula && !holdingSpatula) spatula->Draw(shaders, spatulaMatrix, camera.position);
+    for (const auto& object : interactions.Objects()) {
+        if (auto* box = dynamic_cast<IngredientBox*>(object.get())) {
+            shaders.SetFloat("uOpacity", 1.0f);
+            box->Render(shaders);
+            box->DrawPreview(shaders);
+        } else if (auto* pickup = dynamic_cast<PickupObject*>(object.get())) {
+            if (pickup != spatulaPickup && pickup != player.heldObject)
+                pickup->GetModel().Draw(shaders, pickup->GetMatrix(), camera.position);
+        }
+    }
 
     const Door* focusedDoor = dynamic_cast<Door*>(focusedObject);
-    const Mesh* doorMesh = focusedDoor ? focusedDoor->GetOutlineMesh() : nullptr;
-    const bool outlineSpatula = spatula && spatulaPickup && focusedObject == spatulaPickup;
-    if (doorMesh || outlineSpatula) {
+    const auto* focusedBox = dynamic_cast<IngredientBox*>(focusedObject);
+    const auto* focusedPickup = dynamic_cast<PickupObject*>(focusedObject);
+    const Mesh* outlineMesh = focusedDoor ? focusedDoor->GetOutlineMesh() : (focusedBox ? focusedBox->mesh : nullptr);
+    const Model* outlineModel = focusedPickup ? &focusedPickup->GetModel() : nullptr;
+    if (outlineMesh || outlineModel) {
         shaders.Use("outline");
         shaders.SetMat4("uProjection", projection);
         shaders.SetMat4("uView", view);
-        const glm::mat4& outlinedMatrix = outlineSpatula ? spatulaMatrix : mapMatrix;
+        const glm::mat4 outlinedMatrix = focusedPickup ? focusedPickup->GetMatrix() :
+            (focusedBox ? focusedBox->transform.GetMatrix() : mapMatrix);
         shaders.SetMat4("uModel", outlinedMatrix);
 
         glEnable(GL_STENCIL_TEST);
@@ -282,22 +339,22 @@ void PlayScene::Render() {
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
-        if (outlineSpatula) spatula->DrawGeometry();
-        else doorMesh->Draw(); // 원래 형상에서 화면에 보이는 픽셀만 스텐실에 표시
+        if (outlineModel) outlineModel->DrawGeometry();
+        else outlineMesh->Draw(); // 원래 형상에서 화면에 보이는 픽셀만 스텐실에 표시
 
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
         glStencilMask(0x00);
         glDisable(GL_DEPTH_TEST);
-        const glm::vec3 boundsMin = outlineSpatula ? spatula->GetBoundsMin() : doorMesh->GetBoundsMin();
-        const glm::vec3 boundsMax = outlineSpatula ? spatula->GetBoundsMax() : doorMesh->GetBoundsMax();
+        const glm::vec3 boundsMin = outlineModel ? outlineModel->GetBoundsMin() : outlineMesh->GetBoundsMin();
+        const glm::vec3 boundsMax = outlineModel ? outlineModel->GetBoundsMax() : outlineMesh->GetBoundsMax();
         const glm::vec3 center = (boundsMin + boundsMax) * 0.5f;
         const glm::mat4 expanded = outlinedMatrix * glm::translate(glm::mat4(1.0f), center) *
             glm::scale(glm::mat4(1.0f), glm::vec3(1.08f, 1.05f, 1.08f)) *
             glm::translate(glm::mat4(1.0f), -center);
         shaders.SetMat4("uModel", expanded);
-        if (outlineSpatula) spatula->DrawGeometry();
-        else doorMesh->Draw();
+        if (outlineModel) outlineModel->DrawGeometry();
+        else outlineMesh->Draw();
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
@@ -306,11 +363,11 @@ void PlayScene::Render() {
         glDisable(GL_STENCIL_TEST);
     }
 
-    if (holdingSpatula) {
+    if (auto* held = dynamic_cast<PickupObject*>(player.heldObject)) {
         // 월드 깊이와 분리해 벽 가까이에서도 1인칭 도구가 가려지지 않게 한다.
         glClear(GL_DEPTH_BUFFER_BIT);
         useShader("map");
-        spatula->Draw(shaders, spatulaMatrix, camera.position);
+        held->GetModel().Draw(shaders, held->GetMatrix(), camera.position);
     }
 
     DrawOrderTickets(width, height);

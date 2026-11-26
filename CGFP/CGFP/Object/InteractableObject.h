@@ -7,5 +7,6 @@ class Player;
 class InteractableObject : public Object {
 public:
     virtual void OnInteract(Player& player) {}
+    virtual void OnPrimaryInteract(Player& player) { if (CanPickUp()) OnInteract(player); }
     virtual bool CanPickUp() const { return false; }
 };

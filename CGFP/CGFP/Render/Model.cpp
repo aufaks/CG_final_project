@@ -191,15 +191,17 @@ bool Model::LoadObj(const std::string& path, bool krustyKrab) {
                 const glm::vec3 centroid = (a + positions[tri[1].position] + positions[tri[2].position]) / 3.0f;
                 const bool kitchenHallDoor = krustyKrab && KrustyKrabRules::HallDoor(currentMaterial, centroid);
                 const bool kitchenStorageDoor = krustyKrab && KrustyKrabRules::StorageDoor(currentMaterial);
-                const bool replacedRackFork = krustyKrab && KrustyKrabRules::ReplacedFork(currentMaterial, centroid);
+                const bool hiddenClutter = krustyKrab && (KrustyKrabRules::ReplacedFork(currentMaterial, centroid) ||
+                    KrustyKrabRules::WarehouseClutter(currentMaterial, centroid));
                 glm::vec3 faceNormal = glm::cross(positions[tri[1].position] - a, positions[tri[2].position] - a);
                 faceNormal = glm::length(faceNormal) > 1e-12f ? glm::normalize(faceNormal) : glm::vec3(0, 1, 0);
                 for (const FaceIndex& index : tri) {
                     MeshVertex v;
                     v.position = positions[index.position];
+                    if (krustyKrab) v.position.y += KrustyKrabRules::WarehouseHeightAdjustment(currentMaterial);
                     v.normal = index.normal >= 0 ? normals[index.normal] : faceNormal;
                     if (index.uv >= 0) v.uv = uvs[index.uv];
-                    if (!replacedRackFork) bucket->push_back(v);
+                    if (!hiddenClutter) bucket->push_back(v);
                     if (kitchenHallDoor) kitchenHallDoorVertices.push_back(v);
                     if (kitchenStorageDoor) kitchenStorageDoorVertices.push_back(v);
                 }

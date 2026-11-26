@@ -11,6 +11,7 @@ public:
     void Add(std::unique_ptr<InteractableObject> object) { objects.push_back(std::move(object)); }
     void Clear(Player& player) { focused = nullptr; player.heldObject = nullptr; objects.clear(); }
     InteractableObject* Focused() const { return focused; }
+    const std::vector<std::unique_ptr<InteractableObject>>& Objects() const { return objects; }
     void Update(Player& player, bool active, float distance) {
         focused = nullptr;
         if (!active) return;
@@ -33,8 +34,8 @@ public:
         if (focused && !focused->CanPickUp() && InputManager::GetKeyDown(GLFW_KEY_E)) focused->OnInteract(player);
         if (InputManager::GetMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
             if (held) held->Use(player);
-            else if (!player.heldObject && focused && focused->CanPickUp()) {
-                focused->OnInteract(player);
+            else if (!player.heldObject && focused) {
+                focused->OnPrimaryInteract(player);
                 if (player.heldObject) focused = nullptr;
             }
         }
