@@ -18,7 +18,7 @@ public:
         const Ray ray = Ray::FromCamera(player.camera);
         float nearest = distance;
         for (const auto& object : objects) {
-            if (object->IsDestroyed() || object.get() == player.heldObject) continue;
+            if (object->IsDestroyed() || object.get() == player.heldObject || !object->CanFocus(player)) continue;
             float hit = 0.0f;
             if (object->GetWorldCollider().IntersectsRay(ray.origin, ray.direction, nearest, hit)) {
                 nearest = hit;
@@ -33,7 +33,7 @@ public:
         }
         if (focused && !focused->CanPickUp() && InputManager::GetKeyDown(GLFW_KEY_E)) focused->OnInteract(player);
         if (InputManager::GetMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
-            if (held) held->Use(player);
+            if (held) held->UseOn(player, focused);
             else if (!player.heldObject && focused) {
                 focused->OnPrimaryInteract(player);
                 if (player.heldObject) focused = nullptr;

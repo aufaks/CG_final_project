@@ -27,7 +27,7 @@ public:
     bool LoadObj(const std::string& path, bool krustyKrab = false);
 
     // 불투명 파트를 먼저 그리고, 반투명 파트는 카메라에서 먼 순서로 그린다.
-    void Draw(ShaderManager& shaders, const glm::mat4& modelMatrix, const glm::vec3& cameraPosition) const;
+    void Draw(ShaderManager& shaders, const glm::mat4& modelMatrix, const glm::vec3& cameraPosition, float opacity = 1.0f) const;
     // 외곽선의 스텐실/확장 패스처럼 재질 없이 형상만 다시 그릴 때 사용한다.
     void DrawGeometry() const;
 

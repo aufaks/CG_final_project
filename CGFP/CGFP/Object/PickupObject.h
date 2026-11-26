@@ -16,6 +16,7 @@ public:
     const glm::mat4& GetMatrix() const { return matrix; }
 
     virtual void Use(Player&) {} // 도구별 사용 동작은 파생 클래스에서 구현한다.
+    virtual void UseOn(Player& player, InteractableObject*) { Use(player); }
     virtual void UpdateHeld(const Player& player) {
         const glm::vec3 forward = player.camera.GetForward();
         const glm::vec3 right = player.camera.GetRight();
@@ -30,9 +31,10 @@ public:
     }
 protected:
     void SetHeldMatrix(const glm::mat4& heldMatrix) { matrix = heldMatrix; }
+    void SetWorldMatrix(const glm::mat4& worldMatrix) { matrix = worldMatrix; UpdateBounds(); }
 
 public:
-    void Drop(Player& player) {
+    virtual void Drop(Player& player) {
         const glm::vec3 forward = player.camera.GetFlatForward();
         matrix = glm::mat4(1.0f);
         matrix[0] = glm::vec4(player.camera.GetRight(), 0.0f);

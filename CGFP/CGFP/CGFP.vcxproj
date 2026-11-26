@@ -200,6 +200,7 @@
     <ClInclude Include="Cooking\Grill.h" />
     <ClInclude Include="Cooking\Ingredient.h" />
     <ClInclude Include="Cooking\IngredientBox.h" />
+    <ClInclude Include="Cooking\TrayStack.h" />
     <ClInclude Include="Cooking\Plate.h" />
     <ClInclude Include="Cooking\Seat.h" />
     <ClInclude Include="Order\CustomerManager.h" />

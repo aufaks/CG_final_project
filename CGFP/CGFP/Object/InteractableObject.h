@@ -9,4 +9,5 @@ public:
     virtual void OnInteract(Player& player) {}
     virtual void OnPrimaryInteract(Player& player) { if (CanPickUp()) OnInteract(player); }
     virtual bool CanPickUp() const { return false; }
+    virtual bool CanFocus(const Player&) const { return true; }
 };

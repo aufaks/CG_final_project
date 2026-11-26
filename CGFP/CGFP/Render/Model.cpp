@@ -266,7 +266,7 @@ bool Model::LoadObj(const std::string& path, bool krustyKrab) {
     return true;
 }
 
-void Model::Draw(ShaderManager& shaders, const glm::mat4& modelMatrix, const glm::vec3& cameraPosition) const {
+void Model::Draw(ShaderManager& shaders, const glm::mat4& modelMatrix, const glm::vec3& cameraPosition, float opacity) const {
     shaders.SetMat4("uModel", modelMatrix);
     shaders.SetInt("uTexture", 0);
 
@@ -276,7 +276,7 @@ void Model::Draw(ShaderManager& shaders, const glm::mat4& modelMatrix, const glm
             glCullFace(GL_BACK);
         }
         shaders.SetVec3("uColor", part.color);
-        shaders.SetFloat("uOpacity", part.opacity);
+        shaders.SetFloat("uOpacity", part.opacity * opacity);
         const bool useTexture = part.texture && part.texture->IsLoaded();
         shaders.SetBool("uUseTexture", useTexture);
         if (useTexture) part.texture->Bind(0);

@@ -3,6 +3,7 @@
 #include "Core/GL.h"
 #include "Core/InputManager.h"
 #include "Cooking/IngredientBox.h"
+#include "Cooking/TrayStack.h"
 #include "Object/Door.h"
 #include "Object/PickupObject.h"
 #include "Object/Ray.h"
@@ -16,6 +17,7 @@
 namespace {
 const char* kMapPath = "obj/imported/krusty-krab-interior/Krusty_Krab_Interior.obj";
 const char* kSpatulaPath = "obj/imported/spatula-spongebob/SpatulaSpongebob.obj";
+const char* kTrayPath = "obj/imported/fast-food-tray/FastFoodTray.obj";
 const char* kIngredientModels[] = {
     "BottomBun.obj", "Patty.obj", "Lettuce.obj", "Cheese.obj", "Pickle.obj",
     "Tomato.obj", "Onion.obj", "KetchupBottle.obj", "MustardBottle.obj", "TopBun.obj"
@@ -114,6 +116,7 @@ void PlayScene::Exit() {
     interactions.Clear(player);
     ingredientBoxMesh.reset();
     pendingIngredient.reset();
+    pendingTray = false;
     customerManager.customers.clear(); // 손님 메시(GL 버퍼)는 컨텍스트가 살아 있을 때 지운다
     squidward.Unload();
     squidwardLoaded = false;
@@ -225,6 +228,12 @@ void PlayScene::LoadMap() {
         MapToWorld(glm::vec3(-2580.8f, kFloorY, 2633.2f)),
         map->GetKitchenStorageDoorMesh()));
     SetupIngredientBoxes();
+    SetupTrayStack();
+    // 그릴 왼쪽 조리대의 실제 메시 범위와 윗면 높이(OBJ 원본 좌표).
+    interactions.Add(std::make_unique<TrayPlacementSurface>(
+        Collider(MapToWorld(glm::vec3(-2584.77f, -125.47f, 2601.39f)),
+                 MapToWorld(glm::vec3(-2580.88f, -122.70f, 2604.12f))),
+        MapToWorld(glm::vec3(-2582.825f, -122.712f, 2602.755f))));
     squidward.Place(MapToWorld(kSquidwardFeetInObj), kSquidwardYaw);
     if (customersLoaded) SetupCustomers();
 
@@ -252,9 +261,37 @@ void PlayScene::Update(float deltaTime) {
         DispenseIngredient(*pendingIngredient);
         pendingIngredient.reset();
     }
+    if (pendingTray) {
+        DispenseTray();
+        pendingTray = false;
+    }
     orderManager.Update(deltaTime);
     if (map) customerManager.Update(deltaTime);
     if (squidwardLoaded) squidward.Update(deltaTime);
+}
+
+void PlayScene::SetupTrayStack() {
+    auto tray = std::make_unique<Model>();
+    if (!tray->LoadObj(kTrayPath)) {
+        std::cerr << "[PlayScene] 트레이 모델을 불러오지 못했습니다.\n";
+        return;
+    }
+    // 창고 문 오른쪽 탁자의 윗면 중앙, OBJ 원본 좌표 기준.
+    const glm::mat4 base = glm::translate(glm::mat4(1.0f), MapToWorld(glm::vec3(-2591.13f, -121.72f, 2627.5f)));
+    interactions.Add(std::make_unique<TrayStack>(std::move(tray), base, [this] { pendingTray = true; }));
+}
+
+void PlayScene::DispenseTray() {
+    if (player.heldObject) return;
+    auto model = std::make_unique<Model>();
+    if (!model->LoadObj(kTrayPath)) {
+        std::cerr << "[PlayScene] 트레이 모델을 불러오지 못했습니다.\n";
+        return;
+    }
+    auto tray = std::make_unique<TrayPickup>(std::move(model));
+    tray->OnInteract(player);
+    tray->UpdateHeld(player);
+    interactions.Add(std::move(tray));
 }
 
 void PlayScene::SetupIngredientBoxes() {
@@ -329,23 +366,38 @@ void PlayScene::Render() {
             shaders.SetFloat("uOpacity", 1.0f);
             box->Render(shaders);
             box->DrawPreview(shaders);
+        } else if (auto* stack = dynamic_cast<TrayStack*>(object.get())) {
+            stack->Draw(shaders, camera.position);
         } else if (auto* pickup = dynamic_cast<PickupObject*>(object.get())) {
             if (pickup != spatulaPickup && pickup != player.heldObject)
                 pickup->GetModel().Draw(shaders, pickup->GetMatrix(), camera.position);
         }
     }
 
+    const auto* traySurface = dynamic_cast<TrayPlacementSurface*>(focusedObject);
+    const auto* heldTray = dynamic_cast<TrayPickup*>(player.heldObject);
+    if (traySurface && heldTray && traySurface->CanFocus(player)) {
+        // 트레이가 놓일 실제 위치와 동일한 행렬을 반투명으로 미리 보여준다.
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+        heldTray->GetModel().Draw(shaders, traySurface->Placement(heldTray->GetModel()), camera.position, 0.25f);
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+    }
+
     const Door* focusedDoor = dynamic_cast<Door*>(focusedObject);
     const auto* focusedBox = dynamic_cast<IngredientBox*>(focusedObject);
     const auto* focusedPickup = dynamic_cast<PickupObject*>(focusedObject);
+    const auto* focusedStack = dynamic_cast<TrayStack*>(focusedObject);
     const Mesh* outlineMesh = focusedDoor ? focusedDoor->GetOutlineMesh() : (focusedBox ? focusedBox->mesh : nullptr);
-    const Model* outlineModel = focusedPickup ? &focusedPickup->GetModel() : nullptr;
+    const Model* outlineModel = focusedPickup ? &focusedPickup->GetModel() : (focusedStack ? &focusedStack->GetModel() : nullptr);
     if (outlineMesh || outlineModel) {
         shaders.Use("outline");
         shaders.SetMat4("uProjection", projection);
         shaders.SetMat4("uView", view);
         const glm::mat4 outlinedMatrix = focusedPickup ? focusedPickup->GetMatrix() :
-            (focusedBox ? focusedBox->transform.GetMatrix() : mapMatrix);
+            (focusedStack ? focusedStack->GetMatrix() : (focusedBox ? focusedBox->transform.GetMatrix() : mapMatrix));
         shaders.SetMat4("uModel", outlinedMatrix);
 
         glEnable(GL_STENCIL_TEST);
@@ -355,7 +407,8 @@ void PlayScene::Render() {
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
-        if (outlineModel) outlineModel->DrawGeometry();
+        if (focusedStack) focusedStack->DrawGeometry(shaders, outlinedMatrix);
+        else if (outlineModel) outlineModel->DrawGeometry();
         else outlineMesh->Draw(); // 원래 형상에서 화면에 보이는 픽셀만 스텐실에 표시
 
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -369,7 +422,8 @@ void PlayScene::Render() {
             glm::scale(glm::mat4(1.0f), glm::vec3(1.08f, 1.05f, 1.08f)) *
             glm::translate(glm::mat4(1.0f), -center);
         shaders.SetMat4("uModel", expanded);
-        if (outlineModel) outlineModel->DrawGeometry();
+        if (focusedStack) focusedStack->DrawGeometry(shaders, expanded);
+        else if (outlineModel) outlineModel->DrawGeometry();
         else outlineMesh->Draw();
 
         glEnable(GL_DEPTH_TEST);
